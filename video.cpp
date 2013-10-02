@@ -77,8 +77,8 @@ namespace GEMUFF
 
             for (size_t i = 0; i < imageSeq.size(); i++)
             {
-                Hash::AbstractHash *_hash = ImageRegister::RegisterFrame(imageSeq[i]);
-                frame_sequence_hash.push_back((Hash::AbstractHash*) _hash);
+                Hash::AbstractHashPtr _hash = ImageRegister::RegisterFrame(imageSeq[i]);
+                frame_sequence_hash.push_back(_hash);
             }
 
             return 0;
@@ -147,7 +147,7 @@ namespace GEMUFF
 
 
                         QImage qimg = QImage::fromData((const uchar*)buffer, numBytes, "PPM");
-                        Hash::AbstractHash *_hash = ImageRegister::RegisterFrame(qimg);
+                        Hash::AbstractHashPtr _hash = ImageRegister::RegisterFrame(qimg);
                         frame_sequence_hash.push_back(_hash);
                     }
                 }

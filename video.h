@@ -24,7 +24,7 @@ namespace GEMUFF
             int LoadVideo(std::string filename);
             int LoadFromImageSeq(std::vector<QImage>& imageSeq, int width, int height, float fps);
 
-            std::vector<Hash::AbstractHash*>& getSequenceHash(){ return frame_sequence_hash; }
+            std::vector<Hash::AbstractHashPtr>& getSequenceHash(){ return frame_sequence_hash; }
 
             int getFrameWidth(){ return frame_width; }
             int getFrameHeight(){ return frame_height; }
@@ -36,7 +36,7 @@ namespace GEMUFF
         private:
             int ffmpeg_videostream;
 
-            std::vector<Hash::AbstractHash*> frame_sequence_hash;
+            std::vector<Hash::AbstractHashPtr> frame_sequence_hash;
 
         private:
             void RetrieveHashTable(AVFormatContext *avfmtctx,
