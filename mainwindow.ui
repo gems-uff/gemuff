@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>947</width>
-    <height>768</height>
+    <width>1062</width>
+    <height>764</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,12 +19,12 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>941</width>
-      <height>661</height>
+      <width>1031</width>
+      <height>821</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -136,9 +136,6 @@
          <string>TextLabel</string>
         </property>
        </widget>
-       <zorder>avFinal</zorder>
-       <zorder>scrollArea_2</zorder>
-       <zorder>scrollArea_2</zorder>
       </widget>
      </widget>
      <widget class="QPushButton" name="pushButton">
@@ -340,194 +337,11 @@
      <attribute name="title">
       <string>Merge</string>
      </attribute>
-     <widget class="QScrollArea" name="m_base_sc">
-      <property name="geometry">
-       <rect>
-        <x>30</x>
-        <y>10</y>
-        <width>281</width>
-        <height>181</height>
-       </rect>
-      </property>
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents_6">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>279</width>
-         <height>179</height>
-        </rect>
-       </property>
-       <widget class="QLabel" name="base_merge">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>10</y>
-          <width>261</width>
-          <height>161</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </widget>
-     </widget>
-     <widget class="QScrollArea" name="m_v1_sc">
-      <property name="geometry">
-       <rect>
-        <x>340</x>
-        <y>10</y>
-        <width>281</width>
-        <height>181</height>
-       </rect>
-      </property>
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents_7">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>279</width>
-         <height>179</height>
-        </rect>
-       </property>
-       <widget class="QLabel" name="av1_merge">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>10</y>
-          <width>261</width>
-          <height>161</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </widget>
-     </widget>
-     <widget class="QPushButton" name="v1_merge_load">
-      <property name="geometry">
-       <rect>
-        <x>460</x>
-        <y>240</y>
-        <width>41</width>
-        <height>32</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>...</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="base_load_merge">
-      <property name="geometry">
-       <rect>
-        <x>150</x>
-        <y>240</y>
-        <width>41</width>
-        <height>32</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>...</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="v2_merge_load">
-      <property name="geometry">
-       <rect>
-        <x>770</x>
-        <y>240</y>
-        <width>41</width>
-        <height>32</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>...</string>
-      </property>
-     </widget>
-     <widget class="QScrollArea" name="m_v2_sc">
-      <property name="geometry">
-       <rect>
-        <x>650</x>
-        <y>10</y>
-        <width>281</width>
-        <height>181</height>
-       </rect>
-      </property>
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents_8">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>279</width>
-         <height>179</height>
-        </rect>
-       </property>
-       <widget class="QLabel" name="av2_merge">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>10</y>
-          <width>261</width>
-          <height>161</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </widget>
-     </widget>
-     <widget class="QScrollArea" name="m_merge_sc">
-      <property name="geometry">
-       <rect>
-        <x>350</x>
-        <y>280</y>
-        <width>281</width>
-        <height>181</height>
-       </rect>
-      </property>
-      <property name="widgetResizable">
-       <bool>true</bool>
-      </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents_9">
-       <property name="geometry">
-        <rect>
-         <x>0</x>
-         <y>0</y>
-         <width>279</width>
-         <height>179</height>
-        </rect>
-       </property>
-       <widget class="QLabel" name="av_final_merge">
-        <property name="geometry">
-         <rect>
-          <x>10</x>
-          <y>10</y>
-          <width>261</width>
-          <height>161</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>TextLabel</string>
-        </property>
-       </widget>
-      </widget>
-     </widget>
      <widget class="QSlider" name="merge_slider">
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>500</y>
+        <y>620</y>
         <width>891</width>
         <height>22</height>
        </rect>
@@ -539,8 +353,8 @@
      <widget class="QPushButton" name="btnProcessMerge">
       <property name="geometry">
        <rect>
-        <x>420</x>
-        <y>530</y>
+        <x>460</x>
+        <y>650</y>
         <width>114</width>
         <height>32</height>
        </rect>
@@ -549,56 +363,187 @@
        <string>Processar</string>
       </property>
      </widget>
-     <widget class="QLabel" name="lbl_base_paused">
+     <widget class="QScrollArea" name="scrollArea_6">
+      <property name="geometry">
+       <rect>
+        <x>280</x>
+        <y>10</y>
+        <width>471</width>
+        <height>161</height>
+       </rect>
+      </property>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents_6">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>469</width>
+         <height>159</height>
+        </rect>
+       </property>
+       <widget class="QLabel" name="lblBaseMerge">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>441</width>
+          <height>141</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </widget>
+     </widget>
+     <widget class="QPushButton" name="base_merge_load">
+      <property name="geometry">
+       <rect>
+        <x>510</x>
+        <y>180</y>
+        <width>41</width>
+        <height>32</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>...</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="v1_merge_load">
+      <property name="geometry">
+       <rect>
+        <x>260</x>
+        <y>400</y>
+        <width>41</width>
+        <height>32</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>...</string>
+      </property>
+     </widget>
+     <widget class="QScrollArea" name="scrollArea_7">
       <property name="geometry">
        <rect>
         <x>40</x>
-        <y>200</y>
-        <width>62</width>
-        <height>16</height>
+        <y>230</y>
+        <width>471</width>
+        <height>161</height>
        </rect>
       </property>
-      <property name="text">
-       <string>TextLabel</string>
+      <property name="widgetResizable">
+       <bool>true</bool>
       </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents_11">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>469</width>
+         <height>159</height>
+        </rect>
+       </property>
+       <widget class="QLabel" name="lblV1Merge">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>441</width>
+          <height>141</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </widget>
      </widget>
-     <widget class="QLabel" name="lbl_v1_paused">
+     <widget class="QScrollArea" name="scrollArea_8">
       <property name="geometry">
        <rect>
-        <x>340</x>
-        <y>200</y>
-        <width>62</width>
-        <height>16</height>
+        <x>550</x>
+        <y>230</y>
+        <width>471</width>
+        <height>161</height>
        </rect>
       </property>
-      <property name="text">
-       <string>TextLabel</string>
+      <property name="widgetResizable">
+       <bool>true</bool>
       </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents_13">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>469</width>
+         <height>159</height>
+        </rect>
+       </property>
+       <widget class="QLabel" name="lblV2Merge">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>441</width>
+          <height>141</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </widget>
      </widget>
-     <widget class="QLabel" name="lbl_v2_paused">
+     <widget class="QScrollArea" name="scrollArea_9">
       <property name="geometry">
        <rect>
-        <x>650</x>
-        <y>200</y>
-        <width>62</width>
-        <height>16</height>
+        <x>310</x>
+        <y>440</y>
+        <width>471</width>
+        <height>161</height>
        </rect>
       </property>
-      <property name="text">
-       <string>TextLabel</string>
+      <property name="widgetResizable">
+       <bool>true</bool>
       </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents_15">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>469</width>
+         <height>159</height>
+        </rect>
+       </property>
+       <widget class="QLabel" name="lblResultMerge">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>441</width>
+          <height>141</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </widget>
      </widget>
-     <widget class="QLabel" name="lbl_merge_paused">
+     <widget class="QPushButton" name="v2_merge_load">
       <property name="geometry">
        <rect>
-        <x>350</x>
-        <y>470</y>
-        <width>62</width>
-        <height>16</height>
+        <x>780</x>
+        <y>400</y>
+        <width>41</width>
+        <height>32</height>
        </rect>
       </property>
       <property name="text">
-       <string>TextLabel</string>
+       <string>...</string>
       </property>
      </widget>
     </widget>
@@ -609,7 +554,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>947</width>
+     <width>1062</width>
      <height>22</height>
     </rect>
    </property>

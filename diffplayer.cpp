@@ -82,7 +82,6 @@ namespace GEMUFF {
         void Diff2Player::SetTime(int time){
             currentIndex = time;
 
-            qDebug() << "Tempo: " << time;
             QImage v1_img((diffProcessing->getFrameWidth() + 10) * bufferSize + 20,
                           diffProcessing->getFrameHeight() + 20, QImage::Format_RGB32);
 
@@ -126,25 +125,27 @@ namespace GEMUFF {
                 //qDebug() << "V2 id: " << v2[currentIndex+i].id.c_str();
 
                 if (mFrames[currentIndex+i].op == OP_NONE){
-                    painter.drawImage(dest, (*ImageRegister::ImageAt(mFrames[currentIndex+i].v1)));
-                    painter2.drawImage(dest, (*ImageRegister::ImageAt(mFrames[currentIndex+i].v2)));
+                    QImage _v1 = ImageRegister::ImageAt(mFrames[currentIndex+i].v1)->toQImage();
+                    QImage _v2 = ImageRegister::ImageAt(mFrames[currentIndex+i].v2)->toQImage();
+
+                    painter.drawImage(dest, _v1);
+                    painter2.drawImage(dest, _v2);
                 }
 
                 if (mFrames[currentIndex+i].op == OP_CHANGED){
 
-                    QImage* img1 = ImageRegister::ImageAt(mFrames[currentIndex+i].v1);
-                    QImage* img2 = ImageRegister::ImageAt(mFrames[currentIndex+i].v2);
-                    QImage diff = ImageRegister::ProcessGPUDiff(img1, img2);
-                    //diff->save("/Users/josericardo/temp/test" + QString::number(i) + ".jpg");
+                    QImage img1 = ImageRegister::ImageAt(mFrames[currentIndex+i].v1)->toQImage();
+                    QImage img2 = ImageRegister::ImageAt(mFrames[currentIndex+i].v2)->toQImage();
+                    QImage diff = ImageRegister::ProcessGPUDiff(&img1, &img2);
 
                     pen.setColor(Qt::yellow);
                     painter.setPen(pen);
                     painter.drawRect(rect);
-                    painter.drawImage(dest, (*img1));
+                    painter.drawImage(dest, img1);
 
                     painter2.setPen(pen);
                     painter2.drawRect(rect);
-                    painter2.drawImage(dest, (*img2));
+                    painter2.drawImage(dest, img2);
 
                     painterDiff.setPen(pen);
                     painterDiff.drawRect(rect);
@@ -155,22 +156,26 @@ namespace GEMUFF {
                     pen.setColor(Qt::red);
                     painter.setPen(pen);
                     painter.drawRect(rect);
-                    painter.drawImage(dest, (*ImageRegister::ImageAt(mFrames[currentIndex+i].v1)));
+                    painter.drawImage(dest,
+                        ImageRegister::ImageAt(mFrames[currentIndex+i].v1)->toQImage());
 
                     painterDiff.setPen(pen);
                     painterDiff.drawRect(rect);
-                    painterDiff.drawImage(dest, (*ImageRegister::ImageAt(mFrames[currentIndex+i].v1)));
+                    painterDiff.drawImage(dest,
+                        ImageRegister::ImageAt(mFrames[currentIndex+i].v1)->toQImage());
                 }
 
                 if (mFrames[currentIndex+i].op == OP_ADD){
                     pen.setColor(Qt::green);
                     painter2.setPen(pen);
                     painter2.drawRect(rect);
-                    painter2.drawImage(dest, (*ImageRegister::ImageAt(mFrames[currentIndex+i].v2)));
+                    painter2.drawImage(dest,
+                       ImageRegister::ImageAt(mFrames[currentIndex+i].v2)->toQImage());
 
                     painterDiff.setPen(pen);
                     painterDiff.drawRect(rect);
-                    painterDiff.drawImage(dest, (*ImageRegister::ImageAt(mFrames[currentIndex+i].v2)));
+                    painterDiff.drawImage(dest,
+                       ImageRegister::ImageAt(mFrames[currentIndex+i].v2)->toQImage());
                 }
             }
 

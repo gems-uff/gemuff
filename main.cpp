@@ -66,6 +66,18 @@ void DiffAlgoTest()
 
 int main(int argc, char *argv[])
 {
+  /*  GEMUFF::VIMUFF::ImagePtr im1(new GEMUFF::VIMUFF::Image());
+    im1->loadFromFile("/Users/josericardo/noise2d.png");
+
+    GEMUFF::VIMUFF::ImagePtr im2(new GEMUFF::VIMUFF::Image());
+    im2->loadFromFile("/Users/josericardo/lena1a.png");
+
+    GEMUFF::Hash::AbstractHashPtr im1h(GEMUFF::Hash::MarrHildretchHash::GenerateHash(im1));
+    GEMUFF::Hash::AbstractHashPtr im2h(GEMUFF::Hash::MarrHildretchHash::GenerateHash(im2));
+
+    im1h->getSimilarity(im2h);
+*/
+
     QApplication a(argc, argv);
     MainWindow w;
     w.show();

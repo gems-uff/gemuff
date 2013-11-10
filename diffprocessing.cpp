@@ -18,16 +18,21 @@ namespace GEMUFF {
             std::vector<Hash::AbstractHashPtr>& v1_sequence_hash = v1->getSequenceHash();
             std::vector<Hash::AbstractHashPtr>& v2_sequence_hash = v2->getSequenceHash();
 
-            #ifdef _DEBUG_TIME
-            QTime time;
-            time.restart();
-            #endif
 
              // Processar video final
              int _frameSize = sizeof(uint8_t) * 4 * mFrameWidth * mFrameHeight;
 
-            std::vector<Diff::Node> nodes =
-                    Diff::HierarchicalDiff::CalculateDiff(v1_sequence_hash, v2_sequence_hash, 1.0f);
+             #ifdef _DEBUG_TIME
+             QTime time;
+             time.restart();
+             #endif
+
+             std::vector<Diff::Node> nodes =
+                     Diff::HierarchicalDiff::CalculateDiff(v1_sequence_hash, v2_sequence_hash, 1.0f);
+
+             #ifdef _DEBUG_TIME
+             qDebug() << "MD5 LCS: (ms): " << time.elapsed();
+             #endif _DEBUG_TIME
 
              // Criar as estruturas de diff baseado nos intervalos calculados
             GenerateDiffData(nodes);
@@ -36,6 +41,11 @@ namespace GEMUFF {
 
         void Diff2Processing::GenerateDiffData(std::vector<Diff::Node> &interval){
 
+            #ifdef _DEBUG_TIME
+            QTime time;
+            int totalSimilarHashTime = 0;
+            #endif
+
             for (int i = 0; i < interval.size(); i++)
             {
                 NodeDiff2 node_diff2;
@@ -43,40 +53,84 @@ namespace GEMUFF {
 
                 // Check if both intervals have modifications
                 if (interval[i].seq1.size() > 0 && interval[i].seq2.size() > 0){
+
+                    #ifdef _DEBUG_TIME
+                    time.restart();
+                    #endif
+
                     // New LCS considering this subinterval and using a similar hash algorithm
-                    std::vector<Hash::AbstractHashPtr> v1_sequence_hash;
-                    std::vector<Hash::AbstractHashPtr> v2_sequence_hash;
-
+                    std::vector<VIMUFF::ImagePtr> v1_images;
                     for (int k = 0; k < interval[i].seq1.size(); k++){
-                        QImage *img = ImageRegister::ImageAt(interval[i].seq1[k]);
+                        VIMUFF::ImagePtr img = ImageRegister::ImageAt(interval[i].seq1[k]);
+                        v1_images.push_back(img);
+                    }                 
 
-                        Hash::AbstractHashPtr _h(Hash::MarrHildretchHash::GenerateHash(
-                                    img->constBits(), img->height(), img->width(), 3));
-                        _h->setData(interval[i].seq1[k]);
-                        v1_sequence_hash.push_back(_h);
+                    std::vector<Hash::AbstractHashPtr> v1_sequence_hash =
+                            Hash::MarrHildretchHash::GenerateHashBatch(v1_images);
+                    for (int k = 0; k < interval[i].seq1.size(); k++){
+                        v1_sequence_hash[k]->setData(interval[i].seq1[k]);
+
+                         static bool save = true;
+                         if (save){
+                             ImagePtr im1 = ImageRegister::ImageAt(interval[i].seq1[k]);
+                             //ImagePtr im2 = ImageRegister::ImageAt(similarHashRes[k].id2->getData());
+                             save = false;
+                             QImage _img1 = im1->toQImage();
+                             //QImage _img2 = im2->toQImage();
+                             _img1.save("/Users/josericardo/imseq1.jpg");
+                             //_img2.save("/Users/josericardo/imseq2.jpg");
+
+                         }
+
                     }
 
+
+                    std::vector<VIMUFF::ImagePtr> v2_images;
                     for (int k = 0; k < interval[i].seq2.size(); k++){
-                        QImage *img = ImageRegister::ImageAt(interval[i].seq2[k]);
+                        VIMUFF::ImagePtr img = ImageRegister::ImageAt(interval[i].seq2[k]);
 
-                        Hash::AbstractHashPtr _h(Hash::MarrHildretchHash::GenerateHash(
-                                    img->constBits(), img->width(), img->height(), 3));
-                        _h->setData(interval[i].seq2[k]);
+                        static bool save = true;
+                        if (save){
+                            save = false;
+                            QImage _img = img->toQImage();
+                            _img.save("/Users/josericardo/seq2.jpg");
 
-                        v2_sequence_hash.push_back(_h);
+                        }
+                        v2_images.push_back(img);
                     }
 
+                    std::vector<Hash::AbstractHashPtr> v2_sequence_hash =
+                            Hash::MarrHildretchHash::GenerateHashBatch(v2_images);
+                    for (int k = 0; k < interval[i].seq2.size(); k++){
+                        v2_sequence_hash[k]->setData(interval[i].seq2[k]);
+                    }
 
                     std::vector<Diff::Node> similarHashRes = Diff::HierarchicalDiff::CalculateDiff(
-                                v1_sequence_hash, v2_sequence_hash, 0.1f);
+                                v1_sequence_hash, v2_sequence_hash, 0.5f);
+
+                    #ifdef _DEBUG_TIME
+                    totalSimilarHashTime += time.restart();
+                    #endif
 
                     for (int k = 0; k < similarHashRes.size(); k++)
                     {
                         if (similarHashRes[k].id1 != NULL &&
                                 similarHashRes[k].id2 != NULL) {
 
+                           /* static bool save = true;
+                            if (save){
+                                ImagePtr im1 = ImageRegister::ImageAt(similarHashRes[k].id1->getData());
+                                ImagePtr im2 = ImageRegister::ImageAt(similarHashRes[k].id2->getData());
+                                save = false;
+                                QImage _img1 = im1->toQImage();
+                                QImage _img2 = im2->toQImage();
+                                _img1.save("/Users/josericardo/imseq1.jpg");
+                                _img2.save("/Users/josericardo/imseq2.jpg");
+
+                            }*/
+
                             FrameDiff2 fd2;
-                            fd2.v1.op = fd2.v2.op = OP_CHANGED;\
+                            fd2.v1.op = fd2.v2.op = OP_CHANGED;
 
                             fd2.v1.frame_id = similarHashRes[k].id1->getData();
                             fd2.v2.frame_id = similarHashRes[k].id2->getData();
@@ -128,7 +182,11 @@ namespace GEMUFF {
                 }
 
                 mDiffNodes.push_back(node_diff2);
-            }          
+            }
+
+            #ifdef _DEBUG_TIME
+            qDebug() << "Similarity Hash: (ms): " << totalSimilarHashTime;
+            #endif
         }
     }
 }

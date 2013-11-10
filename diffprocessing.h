@@ -9,6 +9,8 @@
 #include "diffalgorithms.h"
 #include <algorithm>
 
+#define _DEBUG_TIME
+
 
 namespace GEMUFF{
     namespace VIMUFF{

@@ -7,6 +7,7 @@
 #include <QDebug>
 #include "hash.h"
 #include "K_IMUFF.h"
+#include "image.h"
 
 namespace GEMUFF
 {
@@ -16,13 +17,13 @@ namespace GEMUFF
         class ImageRegister
         {
         public:
-            static Hash::AbstractHashPtr RegisterFrame(QImage image);
-            static QImage* ImageAt(Hash::AbstractHashPtr _hash);
+            static Hash::AbstractHashPtr RegisterFrame(unsigned char* buffer, int width, int height, int bpp);
+            static VIMUFF::ImagePtr ImageAt(Hash::AbstractHashPtr _hash);
             static QImage ProcessGPUDiff(QImage* img1, QImage* img2);
             static void Debug();
 
         private:
-            static std::map<Hash::AbstractHashPtr,QImage> m_Frames;
+            static std::map<Hash::AbstractHashPtr,ImagePtr> m_Frames;
         };
     }
 }

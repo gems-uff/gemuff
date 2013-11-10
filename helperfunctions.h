@@ -17,9 +17,10 @@ namespace GEMUFF {
     public:
         static void PrintList(std::vector<Hash::AbstractHash*>& list, char* name);
         static void PrintList(std::vector<LCSEntry> &list, char *name);
-        static std::vector<LCSEntry> LCS(std::vector<Hash::AbstractHashPtr> s,
-                                         std::vector<Hash::AbstractHashPtr> t,
+        static std::vector<LCSEntry> LCS(std::vector<Hash::AbstractHashPtr> _s,
+                                         std::vector<Hash::AbstractHashPtr> _t,
                                          float thresold);
+        static void PrintList(std::vector<Hash::AbstractHashPtr> &list, char *name);
     };
 }
 

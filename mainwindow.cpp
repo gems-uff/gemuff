@@ -48,7 +48,7 @@ void MainWindow::on_pushButton_clicked()
     diffPlayer.SetBufferSize(5);
     diffPlayer.SetDisplays(ui->av1, ui->av2, ui->avFinal);
 
-    qDebug() << "Frames on Main: " << diffPlayer.GetTimelineLenght();
+    //qDebug() << "Frames on Main: " << diffPlayer.GetTimelineLenght();
 
     ui->slider->setMaximum(diffPlayer.GetTimelineLenght()-1);
 
@@ -242,10 +242,6 @@ void MainWindow::on_v1_diff_load_clicked()
 
     if (file != NULL)
         v1.LoadVideo(file.toStdString());
-
-    // Debug
-    qDebug() <<"Image Register\n";
-    GEMUFF::VIMUFF::ImageRegister::Debug();
 
 
     /*std::vector<std::string>& seq_hash = v1.getSequenceHash();

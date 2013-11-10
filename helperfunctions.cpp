@@ -21,11 +21,34 @@ namespace GEMUFF{
         }
     }
 
-    std::vector<LCSEntry> Helper::LCS(std::vector<Hash::AbstractHashPtr> s,
-                                      std::vector<Hash::AbstractHashPtr> t,
+    void Helper::PrintList(std::vector<Hash::AbstractHashPtr> &list, char *name){
+
+        qDebug() << "List: " << name  << "** Size: " << list.size();
+
+        for (int i = 0; i < list.size(); i++){
+            qDebug() << "L1: " << list[i]->toString().c_str();
+        }
+    }
+
+    std::vector<LCSEntry> Helper::LCS(std::vector<Hash::AbstractHashPtr> _s,
+                                      std::vector<Hash::AbstractHashPtr> _t,
                                       float thresold){
 
         std::vector<LCSEntry> result;
+        std::vector<Hash::AbstractHashPtr> s;
+        std::vector<Hash::AbstractHashPtr> t;
+
+        bool reversed = false;
+        if (_s.size() > _t.size()){
+            reversed = true;
+            s = _t;
+            t = _s;
+        }
+        else{
+            s = _s;
+            t = _t;
+        }
+
 
        int n = s.size(), m = t.size(), i, j, **a;
 
@@ -59,8 +82,8 @@ namespace GEMUFF{
        while (n > 0 && m > 0) { /* back track to find the sequence */
            if (s[n - 1]->isSimilar(t[m - 1], thresold) && m--) {
                LCSEntry _entry;
-               _entry.l1_ref = s[--n];
-               _entry.l2_ref = t[m];
+               _entry.l1_ref = reversed ? t[m] : s[--n];
+               _entry.l2_ref = reversed ? s[--n] : t[m];
                result.push_back(_entry);
           } else {
              a[n][m - 1] >= a[n - 1][m] ? m-- : n--;

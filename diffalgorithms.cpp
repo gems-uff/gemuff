@@ -7,11 +7,10 @@ namespace GEMUFF {
             std::vector<Hash::AbstractHashPtr> _seq_1, std::vector<Hash::AbstractHashPtr> _seq_2, float threshold)
         {
             // Process LCS
-            std::vector<LCSEntry> _lcs =
-                    Helper::LCS(_seq_1, _seq_2, threshold);
+            std::vector<LCSEntry> _lcs = Helper::LCS(_seq_1, _seq_2, threshold);
 
             //Helper::PrintList(_lcs, "LCS: ");
-           // Helper::PrintList(_seq_1, "Seq1: ");
+            //Helper::PrintList(_seq_1, "Seq1: ");
             //Helper::PrintList(_seq_2, "Seq2: ");
 
             int seq1_current_index = 0;
@@ -62,9 +61,11 @@ namespace GEMUFF {
 
             for (; seq1_curIndex < seq1.size(); seq1_curIndex++)
             {
-                if (endLCSElement != NULL)
-                    if (seq1[seq1_curIndex]->toString() == endLCSElement->l1_ref->toString())
+                if (endLCSElement != NULL){
+
+                    if (seq1[seq1_curIndex]->isSimilar(endLCSElement->l1_ref, threshold))
                         break;
+                }
 
                 node.seq1.push_back(seq1[seq1_curIndex]);
             }
@@ -73,7 +74,7 @@ namespace GEMUFF {
             for (; seq2_curIndex < seq2.size(); seq2_curIndex++)
             {
                 if (endLCSElement != NULL)
-                    if (seq2[seq2_curIndex]->toString() == endLCSElement->l2_ref->toString())
+                    if (seq2[seq2_curIndex]->isSimilar(endLCSElement->l2_ref, threshold))
                         break;
 
                 node.seq2.push_back(seq2[seq2_curIndex]);

@@ -1,25 +1,24 @@
 #include "imageregister.h"
 
-std::map<GEMUFF::Hash::AbstractHashPtr, QImage> GEMUFF::VIMUFF::ImageRegister::m_Frames;
+std::map<GEMUFF::Hash::AbstractHashPtr, GEMUFF::VIMUFF::ImagePtr> GEMUFF::VIMUFF::ImageRegister::m_Frames;
 
 namespace GEMUFF
 {
 
     namespace VIMUFF
     {
-        Hash::AbstractHashPtr ImageRegister::RegisterFrame(QImage image)
+        Hash::AbstractHashPtr ImageRegister::RegisterFrame(unsigned char* buffer, int width, int height, int bpp)
         {
             Hash::AbstractHashPtr _hash;
+            VIMUFF::ImagePtr image(new VIMUFF::Image());
+            image->setData(buffer, width, height, bpp);
 
             if (0)
                 _hash.reset(Hash::MarrHildretchHash::GenerateHash(
-                            image.constBits(),
-                            image.width(),
-                            image.height(), 3));
+                        image));
             else
                 _hash.reset(Hash::MD5Hash::GenerateHash(
-                        image.constBits(),
-                        image.width() * image.height() * 3));
+                        image));
 
 
             // Verificar se a imagem existe
@@ -29,16 +28,18 @@ namespace GEMUFF
             return _hash;
         }
 
-        QImage* ImageRegister::ImageAt(Hash::AbstractHashPtr _hash)
+        VIMUFF::ImagePtr ImageRegister::ImageAt(Hash::AbstractHashPtr _hash)
         {
-            if (m_Frames.find(_hash) != m_Frames.end())
-                return &ImageRegister::m_Frames[_hash];
+            VIMUFF::ImagePtr res;
 
-            return NULL;
+            if (m_Frames.find(_hash) != m_Frames.end())
+                res = ImageRegister::m_Frames[_hash];
+
+            return res;
         }
 
         void ImageRegister::Debug(){
-            std::map<Hash::AbstractHashPtr, QImage>::iterator iter;
+            std::map<Hash::AbstractHashPtr, VIMUFF::ImagePtr>::iterator iter;
 
             for (iter = m_Frames.begin(); iter != m_Frames.end(); iter++){
                 qDebug() << iter->first->toString().c_str() << "\n";

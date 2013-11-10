@@ -14,28 +14,96 @@ namespace GEMUFF {
             return std::string(res);
         }
 
-        MD5Hash *MD5Hash::GenerateHash(const unsigned char *d, size_t n){
+        MD5Hash *MD5Hash::GenerateHash(VIMUFF::ImagePtr image){
             MD5Hash *_hashKey = new MD5Hash();
 
-            MD5(d, n, &_hashKey->key[0]);
+            MD5(image->getData(),
+                image->getHeight()*image->getWidth()*image->getChannels(),
+                &_hashKey->key[0]);
 
             return _hashKey;
         }
 
+        DCTHash* DCTHash::GenerateHash(VIMUFF::ImagePtr image){
+
+            DCTHash *dctHash = new DCTHash();
+
+            // 1 step: get the 32x32 gray scale image
+            VIMUFF::ImagePtr grayScaledImage(image->getGrayResizedThumb());
+
+            // 2 step: compute the dct
+            VIMUFF::ImagePtr dctImage(grayScaledImage->dct());
+
+            // 3 step: get only the 8x8 top right pixels (low frequency)
+            // David Starkweather for the added information about pHash. He wrote:
+            // "the dct hash is based on the low 2D DCT coefficients starting at the
+            // second from lowest, leaving out the first DC term. This excludes
+            //completely flat image information (i.e. solid colors) from being
+            // included in the hash description."
+            VIMUFF::ImagePtr dctCropped(dctImage->subImage(1, 1, 8, 8));
+
+            // 4 step: calculate the mean
+            float mean = (float)dctCropped->mean();
+            const float* data = reinterpret_cast<const float*>(dctCropped->data());
+
+            ulong64 one = 0x0000000000000001;
+            dctHash->hash = 0x0000000000000000;
+
+            for (int i=0;i< 64;i++){
+                if (data[i] > mean)
+                    dctHash->hash |= one;
+
+                one = one << 1;
+            }
+
+            return dctHash;
+        }
+
+        double DCTHash::getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash){
+
+            boost::shared_ptr<Hash::DCTHash> mhHash =
+                        boost::dynamic_pointer_cast<Hash::DCTHash>(hash);
+
+
+            ulong64 x = this->hash^mhHash->hash;
+            const ulong64 m1  = 0x5555555555555555ULL;
+            const ulong64 m2  = 0x3333333333333333ULL;
+            const ulong64 h01 = 0x0101010101010101ULL;
+            const ulong64 m4  = 0x0f0f0f0f0f0f0f0fULL;
+            x -= (x >> 1) & m1;
+            x = (x & m2) + ((x >> 2) & m2);
+            x = (x + (x >> 4)) & m4;
+
+            qDebug() << "h1: " << toString().c_str() << " h2: " << hash->toString().c_str() << " s: " << (((x * h01)>>56)/64.0);
+            return 1.0 - (((x * h01)>>56)/64.0);
+        }
+
+        int DCTHash::BitCount8(long64 val){
+            int num = 0;
+
+            while (val){
+                ++num;
+                val &= val - 1;
+            }
+
+            return num;
+        }
 
 
 
-
-        double DCTHash::Sigma = 3;
+        /*double DCTHash::Sigma = 3;
         double DCTHash::N =3;
         double DCTHash::Gamma = 10;
-        DCTHash* DCTHash::GenerateHash(const unsigned char *d, int rows, int cols, int numChanels){
+        DCTHash* DCTHash::GenerateHash(VIMUFF::ImagePtr image){
             cimg_library::CImg<unsigned char> src;
             cimg_library::CImg<float> img;
 
             DCTHash *dctHash = new DCTHash();
 
-            src.assign(d, cols, rows, 1, numChanels);
+            src.assign(image->getData(),
+                       image->getWidth(),
+                       image->getHeight(), 1,
+                       image->getChannels());
 
             cimg_library::CImg<float> meanfilter(7, 7, 1, 1, 1);
 
@@ -133,7 +201,7 @@ namespace GEMUFF {
             if (pcc > threshold)
                 return true;
 
-            return false;*/
+            return false;
         }
 
 
@@ -358,92 +426,65 @@ namespace GEMUFF {
             }
 
             return EXIT_SUCCESS;
-        }
+        }*/
 
 
 
         int MarrHildretchHash::HashSize = 72;
         float MarrHildretchHash::Alpha = 2;
         float MarrHildretchHash::Level = 1;
-        MarrHildretchHash *MarrHildretchHash::GenerateHash(const unsigned char *d, int rows, int cols, int numChannels){
+        MarrHildretchHash *MarrHildretchHash::GenerateHash(VIMUFF::ImagePtr image){
 
             MarrHildretchHash *mhHash = new MarrHildretchHash();
-
-            const unsigned char* _processedImg = NULL;
-
-#ifdef HASH_GPU
-            NppiSize nppSize; nppSize.width = cols; nppSize.height = rows;
-
-            int stride = sizeof(unsigned char) * cols;
-            Npp8u* imgOriginal = nppiMalloc_8u_C3(cols, rows, &stride);
-            Npp8u* imgTmp = nppiMalloc_8u_C3(cols, rows, &stride);
-
-            checkCudaErrors(cudaMemcpy2D(imgOriginal, 0, d, 0, cols, rows, cudaMemcpyHostToDevice));
-            nppiRGBToYCbCr_8u_C3R(imgOriginal, 0, imgTmp, 0, nppSize);
-
-            _processedImg = (const unsigned char*) malloc(sizeof(unsigned char) * cols * rows * numChannels);
-            checkCudaErrors(cudaMemcpy2D((void*)_processedImg, 0, imgTmp, 0, cols, rows, cudaMemcpyDeviceToHost));
-
-            nppiFree(imgOriginal);
-            nppiFree(imgTmp);
-#else
-            _processedImg = d;
-#endif
-
-            cimg_library::CImg<unsigned char> src;
-            cimg_library::CImg<uint8_t> img;
-
-
-            src.assign(_processedImg, cols, rows, 1, numChannels);
-
             mhHash->hash = (unsigned char*)malloc(HashSize*sizeof(uint8_t));
 
 
-            if (src.spectrum() == 3){
-#ifdef HASH_GPU
-                img = src.channel(0).blur(1.0).resize(512,512,1,1,5).get_equalize(256);
-#else
-                img = src.get_RGBtoYCbCr().channel(0).blur(1.0).resize(512,512,1,1,5).get_equalize(256);
-#endif
-            } else{ 
-                img = src.channel(0).get_blur(1.0).resize(512,512,1,1,5).get_equalize(256);
-            }
 
-            src.clear();
+            VIMUFF::ImagePtr grayImg(image->toGray());
+            VIMUFF::ImagePtr blurred (grayImg->blur(1.0f, 1.0f));
+            VIMUFF::ImagePtr equalized (blurred->equalize());
 
-            cimg_library::CImg<float> *pkernel = GetMHKernel(Alpha,Level);
-            cimg_library::CImg<float> fresp =  img.get_correlate(*pkernel);
-            img.clear();
-            fresp.normalize(0,1.0);
 
-            cimg_library::CImg<float> blocks(31,31,1,1,0);
+            int sigma = (int)4*pow((float)Alpha,(float)Level);
+            int width = (2*sigma+1);
+            int height = (2*sigma+1);
+            float kernel[width * height];
 
-            for (int rindex=0;rindex < 31;rindex++){
-                for (int cindex=0;cindex < 31;cindex++){
-                    blocks(rindex,cindex) = fresp.get_crop(rindex*16,cindex*16,rindex*16+16-1,cindex*16+16-1).sum();
+            for (int y = 0; y < height; y++){
+                for (int x = 0; x < width; x++){
+                    float xpos = pow(Alpha,-Level)*(x-sigma);
+                    float ypos = pow(Alpha,-Level)*(y-sigma);
+                    float A = xpos*xpos + ypos*ypos;
+
+                    kernel[y*width + x] = (2-A)*exp(-A/2);
                 }
             }
 
+            VIMUFF::ImagePtr correlateNormalized(equalized->correlateNormalized(width, height, kernel));
+            VIMUFF::ImagePtr final(correlateNormalized->resize(512, 512));
+
+           VIMUFF::ImagePtr _blocks(final->subImageSum(31, 31, 16, 16, 16, 16));
             int hash_index;
             int nb_ones = 0, nb_zeros = 0;
             int bit_index = 0;
             unsigned char hashbyte = 0;
             for (int rindex=0;rindex < 31-2;rindex+=4){
-                cimg_library::CImg<float> subsec;
                 for (int cindex=0;cindex < 31-2;cindex+=4){
-                    subsec = blocks.get_crop(cindex,rindex, cindex+2, rindex+2).unroll('x');
-                    float ave = subsec.mean();
+                    VIMUFF::ImagePtr subsec(_blocks->subImage(cindex, rindex, 3, 3));
 
-                    cimg_forX(subsec, I){
+
+                    float ave = subsec->mean();
+                    float* data = (float*) subsec->getData();
+
+
+                    for (int i = 0; i < subsec->getWidth()*subsec->getHeight(); i++){
                         hashbyte <<= 1;
-
-                        if (subsec(I) > ave){
+                        if (data[i] > ave){
                             hashbyte |= 0x01;
                             nb_ones++;
                         } else {
                             nb_zeros++;
                         }
-
                         bit_index++;
                         if ((bit_index%8) == 0){
                             hash_index = (int)(bit_index/8) - 1;
@@ -454,32 +495,29 @@ namespace GEMUFF {
                 }
             }
 
-#ifdef HASH_GPU
-            free((void*)_processedImg);
-#endif
             return mhHash;
         }
 
+        std::vector<AbstractHashPtr>
+            MarrHildretchHash::GenerateHashBatch(std::vector<VIMUFF::ImagePtr> images){
 
-        cimg_library::CImg<float> *MarrHildretchHash::GetMHKernel(float _alpha, float _level){
+            //VIMUFF::Image *_images =
+              //      VIMUFF::Image::grayBlurredEqualizedBatch(images, 1.0f, 1.0f);
 
-            int sigma = (int)4*pow((float)_alpha,(float)_level);
-            static cimg_library::CImg<float> *pkernel = NULL;
-            float xpos, ypos, A;
+            std::vector<AbstractHashPtr> hashResults;
 
-            if (!pkernel){
-                pkernel = new cimg_library::CImg<float>(2*sigma+1,2*sigma+1,1,1,0);
-                cimg_forXY(*pkernel,X,Y){
-                    xpos = pow(_alpha,-_level)*(X-sigma);
-                    ypos = pow(_alpha,-_level)*(Y-sigma);
-                    A = xpos*xpos + ypos*ypos;
-                    pkernel->atXY(X,Y) = (2-A)*exp(-A/2);
-                }
+            for (int i = 0; i < images.size(); i++){
+                //VIMUFF::ImagePtr equalized(&_images[i]);
+                //AbstractHashPtr _hash(GenerateHash(equalized));
+                AbstractHashPtr _hash(DCTHash::GenerateHash(images[i]));
+                hashResults.push_back(_hash);
             }
-            return pkernel;
+
+            return hashResults;
         }
 
-        float MarrHildretchHash::getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash){
+
+        double MarrHildretchHash::getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash){
 
             boost::shared_ptr<Hash::MarrHildretchHash> mhHash =
                         boost::dynamic_pointer_cast<Hash::MarrHildretchHash>(hash);
@@ -514,6 +552,7 @@ namespace GEMUFF {
             return std::string(res);
 
         }
+
 
         int MarrHildretchHash::BitCount8(uint8_t val){
             int num = 0;

@@ -12,6 +12,8 @@ extern "C" {
 #include "imageregister.h"
 #include <QTime>
 #include <QDebug>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 
 namespace GEMUFF
 {
@@ -22,7 +24,7 @@ namespace GEMUFF
         public:
 
             int LoadVideo(std::string filename);
-            int LoadFromImageSeq(std::vector<QImage>& imageSeq, int width, int height, float fps);
+            //int LoadFromImageSeq(std::vector<QImage>& imageSeq, int width, int height, float fps);
 
             std::vector<Hash::AbstractHashPtr>& getSequenceHash(){ return frame_sequence_hash; }
 

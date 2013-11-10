@@ -10,9 +10,9 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = GEMUFF
 TEMPLATE = app
-INCLUDEPATH += /opt/local/include
-QMAKE_LIBDIR += /opt/local/lib
-LIBS += -lavcodec -lavformat -lswscale -lavutil -lssl -lcrypto
+INCLUDEPATH += /opt/local/include /usr/local/include
+QMAKE_LIBDIR += /opt/local/lib /usr/local/lib
+LIBS += -lavcodec -lavformat -lswscale -lavutil -lssl -lcrypto -lopencv_core -lopencv_highgui -lopencv_imgproc  -lopencv_gpu
 
 SOURCES += main.cpp \
         mainwindow.cpp \
@@ -24,7 +24,8 @@ SOURCES += main.cpp \
     diffplayer.cpp \
     helperfunctions.cpp \
     diffalgorithms.cpp \
-    hash.cpp
+    hash.cpp \
+    image.cpp
 
 HEADERS  += mainwindow.h \
     K_IMUFF.h \
@@ -37,7 +38,8 @@ HEADERS  += mainwindow.h \
     helperfunctions.h \
     GEMUFF.h \
     diffalgorithms.h \
-    hash.h
+    hash.h \
+    image.h
 
 FORMS    += mainwindow.ui
 
@@ -52,7 +54,7 @@ unix:macx {
    # CUDA_LIBS         = -L$${CUDA_INSTALL_PATH}/lib -L$${CUDA_SDK_PATH}/lib
 
         # auto-detect CUDA path
-    CUDA_PATH       = /Developer/NVIDIA/CUDA-5.0
+    CUDA_PATH       = /Developer/NVIDIA/CUDA-5.5
     CUDA_INC_PATH   = $$CUDA_PATH/include
 
     #CUDA_DIR = /usr/local/cuda
@@ -74,20 +76,21 @@ unix:macx {
     else {
         QMAKE_LIBDIR += $$CUDA_DIR/lib64
     }
+#nvcc -ccbin=/usr/bin/clang -m64 -I/Developer/NVIDIA/CUDA-5.5/incude -I/Developer/NVIDIA/CUDA-5.5/samples/common/inc  -c K_IMUFF.cu -o K_IMUFF_1.o
 
     LIBS += -lcudart
 
     cuda.output = ${OBJECTS_DIR}${QMAKE_FILE_BASE}_cuda.o
 
     macx {
-        cuda.commands = $$CUDA_CC -m64 -c -arch sm_12 $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT}
+        cuda.commands = $$CUDA_CC -ccbin=/usr/bin/clang -m64 -c -arch sm_21 $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT}
     }
     else {
-        cuda.commands = $$CUDA_CC -c -arch sm_12 $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT}
+        cuda.commands = $$CUDA_CC  -c -arch sm_12 $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} -o ${QMAKE_FILE_OUT}
     }
 
     cuda.dependcy_type = TYPE_C
-    cuda.depend_command = nvcc -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
+    cuda.depend_command = nvcc -ccbin=/usr/bin/clang  -M -Xcompiler $$join(QMAKE_CXXFLAGS,",") $$join(INCLUDEPATH,'" -I "','-I "','"') ${QMAKE_FILE_NAME} | sed "s,^.*: ,," | sed "s,^ *,," | tr -d '\\\n'
 }
 cuda.input = CUDA_SOURCES
 QMAKE_EXTRA_COMPILERS += cuda

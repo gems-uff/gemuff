@@ -9,11 +9,12 @@
 #include <sstream>
 #include <iostream>
 #include "openssl/md5.h"
-#include "CImg.h"
+//#include "CImg.h"
 #include "GEMUFF.h"
 #include "math.h"
 #include <QDebug>
 #include <boost/shared_ptr.hpp>
+#include <image.h>
 
 //#define HASH_GPU
 
@@ -27,6 +28,8 @@ namespace GEMUFF {
     namespace Hash {
 
 
+        class AbstractHash;
+        typedef boost::shared_ptr<Hash::AbstractHash> AbstractHashPtr;
 
         /*! /brief Digest info
          */
@@ -37,7 +40,7 @@ namespace GEMUFF {
         };
 
         struct SProjections {
-            cimg_library::CImg<uint8_t> *R;           //contains projections of image of angled lines through center
+           // cimg_library::CImg<uint8_t> *R;           //contains projections of image of angled lines through center
             int *nb_pix_perline;        //the head of int array denoting the number of pixels of each line
             int size;                   //the size of nb_pix_perline
         };
@@ -68,10 +71,12 @@ namespace GEMUFF {
                 return false;
             }
 
+        protected:
+
         public:
             AbstractHash (HashType _type) :  hashType(_type){}
 
-            virtual ~AbstractHash(){ printf("AbstractHash::~AbstractHash()"); }
+            virtual ~AbstractHash(){ }
 
             HashType Type(){ return hashType; }
 
@@ -81,7 +86,7 @@ namespace GEMUFF {
                 return this->toString() < h2.toString();
             }
 
-            virtual float getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash) = 0;
+            virtual double getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash) = 0;
 
             bool isSimilar(boost::shared_ptr<Hash::AbstractHash> other, float threshold){
 
@@ -96,6 +101,7 @@ namespace GEMUFF {
 
             void setData(boost::shared_ptr<Hash::AbstractHash> _data){ data = _data; }
             boost::shared_ptr<Hash::AbstractHash> getData(){ return data; }
+
         };
 
 
@@ -111,11 +117,11 @@ namespace GEMUFF {
             }
 
         public:
-            static MD5Hash* GenerateHash(const unsigned char *d, size_t n);
+            static MD5Hash* GenerateHash(VIMUFF::ImagePtr image);
 
             std::string toString();
 
-            float getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash){
+            double getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash){
 
                 if (toString() == hash->toString())
                     return 1.0f;
@@ -128,7 +134,7 @@ namespace GEMUFF {
         /*
          *Discrete cosine transform based hash
          */
-        class DCTHash : public AbstractHash{
+        /*class DCTHash : public AbstractHash{
         private:
             static double Sigma;
             static double N;
@@ -156,7 +162,7 @@ namespace GEMUFF {
 
         public:
 
-            static DCTHash* GenerateHash(const unsigned char *d, int rows, int cols, int numChanels);
+            static DCTHash* GenerateHash(VIMUFF::ImagePtr image);
 
             float getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash);
 
@@ -168,6 +174,29 @@ namespace GEMUFF {
 
             static void Parameters(double _sigma, double _gamma, double n);
 
+        };*/
+
+        class DCTHash : public AbstractHash{
+        private:
+            ulong64 hash;
+
+        private:
+            DCTHash() : AbstractHash(T_DCT){
+            }
+
+            int BitCount8(long64 val);
+
+            public:
+
+            static DCTHash* GenerateHash(VIMUFF::ImagePtr image);
+
+            double getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash);
+
+            std::string toString(){
+                std::stringstream ss;
+                ss << hash;
+                return ss.str();
+            }
         };
 
 
@@ -182,25 +211,26 @@ namespace GEMUFF {
             MarrHildretchHash() : AbstractHash(T_MH){
             }
 
-            static cimg_library::CImg<float> *GetMHKernel(float _alpha, float _level);
+            //static cimg_library::CImg<float> *GetMHKernel(float _alpha, float _level);
 
             int static BitCount8(uint8_t val);
 
         public:
-            static MarrHildretchHash *GenerateHash(const unsigned char *d, int rows, int cols, int numChannels);
+            static MarrHildretchHash *GenerateHash(VIMUFF::ImagePtr image);
 
-            float getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash);
+            static std::vector<AbstractHashPtr>
+                GenerateHashBatch(std::vector<VIMUFF::ImagePtr> images);
+
+            double getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash);
 
             std::string toString();
 
             static void Parameters(int _n, float _alpha, float _level);
 
-            ~MarrHildretchHash(){ free(hash); printf("MarrHildretchHash::~MarrHildretchHash()"); }
+            ~MarrHildretchHash(){ free(hash); }
         };
 
 
-
-        typedef boost::shared_ptr<Hash::AbstractHash> AbstractHashPtr;
 
     }
 }
