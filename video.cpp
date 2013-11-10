@@ -69,7 +69,7 @@ namespace GEMUFF
             return 0;
         }
 
-        int Video::LoadFromImageSeq(std::vector<QImage> &imageSeq, int width, int height, float fps)
+        /*int Video::LoadFromImageSeq(std::vector<QImage> &imageSeq, int width, int height, float fps)
         {
             frame_width = width;
             frame_height = height;
@@ -82,7 +82,7 @@ namespace GEMUFF
             }
 
             return 0;
-        }
+        }*/
 
 
         void Video::RetrieveHashTable(AVFormatContext *avfmtctx, AVCodecContext *avcdctx)
@@ -101,10 +101,12 @@ namespace GEMUFF
             uint8_t *buffer;
             int numBytes;
 
-            numBytes = avpicture_get_size(PIX_FMT_RGB24, avcdctx->width,
-                                          avcdctx->height) + 15;
+            numBytes = avpicture_get_size(PIX_FMT_RGB32, avcdctx->width,
+                                          avcdctx->height);
             buffer = (uint8_t*) av_malloc(numBytes * sizeof(uint8_t));
-            sprintf((char *) buffer, "P6\n%d %d\n255\n", avcdctx->width, avcdctx->height);
+            uint8_t* rgbx =  (uint8_t*) malloc(sizeof(uint8_t) *numBytes);
+
+            //sprintf((char *) buffer, "P6\n%d %d\n255\n", avcdctx->width, avcdctx->height);
 
             sws_ctx = sws_getContext(
                         avcdctx->width,
@@ -112,13 +114,13 @@ namespace GEMUFF
                         avcdctx->pix_fmt,
                         avcdctx->width,
                         avcdctx->height,
-                        PIX_FMT_RGB24,
+                        PIX_FMT_RGB32,
                         SWS_POINT,
                         NULL,
                         NULL,
                         NULL);
 
-            avpicture_fill((AVPicture*)pFrameRGB, &buffer[15], PIX_FMT_RGB24,
+            avpicture_fill((AVPicture*)pFrameRGB, &buffer[0], PIX_FMT_RGB32,
                            avcdctx->width, avcdctx->height);
 
             // Ler dados
@@ -146,8 +148,9 @@ namespace GEMUFF
                                   pFrameRGB->linesize);
 
 
-                        QImage qimg = QImage::fromData((const uchar*)buffer, numBytes, "PPM");
-                        Hash::AbstractHashPtr _hash = ImageRegister::RegisterFrame(qimg);
+
+                        Hash::AbstractHashPtr _hash = ImageRegister::RegisterFrame(
+                            (uchar*)buffer, avcdctx->width, avcdctx->height, 4);
                         frame_sequence_hash.push_back(_hash);
                     }
                 }
@@ -158,6 +161,7 @@ namespace GEMUFF
             av_free(buffer);
             av_free(pFrameRGB);
             av_free(pFrame);
+            free(rgbx);
         }
     }
 }
