@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include <QApplication>
-#include "videoprocessing.h"
+//#include "videoprocessing.h"
 #include "diffalgorithms.h"
 
 void DiffAlgoTest()

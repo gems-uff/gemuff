@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1062</width>
-    <height>764</height>
+    <height>781</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,14 +17,14 @@
    <widget class="QTabWidget" name="tabWidget">
     <property name="geometry">
      <rect>
-      <x>0</x>
-      <y>0</y>
+      <x>20</x>
+      <y>10</y>
       <width>1031</width>
       <height>821</height>
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>1</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
@@ -208,11 +208,11 @@
      <attribute name="title">
       <string>Patch</string>
      </attribute>
-     <widget class="QPushButton" name="pushButton_2">
+     <widget class="QPushButton" name="btnPatchProcess">
       <property name="geometry">
        <rect>
-        <x>400</x>
-        <y>290</y>
+        <x>380</x>
+        <y>650</y>
         <width>114</width>
         <height>32</height>
        </rect>
@@ -221,11 +221,11 @@
        <string>Processar</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="v1_load_patch_load">
+     <widget class="QPushButton" name="btnLoadV1">
       <property name="geometry">
        <rect>
-        <x>130</x>
-        <y>210</y>
+        <x>890</x>
+        <y>90</y>
         <width>41</width>
         <height>32</height>
        </rect>
@@ -234,26 +234,39 @@
        <string>...</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="delta_patch_load">
+     <widget class="QPushButton" name="btnDiffLoad">
       <property name="geometry">
        <rect>
-        <x>430</x>
-        <y>210</y>
+        <x>880</x>
+        <y>500</y>
         <width>41</width>
         <height>32</height>
        </rect>
       </property>
       <property name="text">
        <string>...</string>
+      </property>
+     </widget>
+     <widget class="QSlider" name="patch_slider">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>630</y>
+        <width>971</width>
+        <height>22</height>
+       </rect>
+      </property>
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
       </property>
      </widget>
      <widget class="QScrollArea" name="scrollArea_4">
       <property name="geometry">
        <rect>
-        <x>310</x>
-        <y>20</y>
-        <width>281</width>
-        <height>181</height>
+        <x>10</x>
+        <y>10</y>
+        <width>851</width>
+        <height>191</height>
        </rect>
       </property>
       <property name="widgetResizable">
@@ -264,17 +277,17 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>279</width>
-         <height>179</height>
+         <width>849</width>
+         <height>189</height>
         </rect>
        </property>
-       <widget class="QLabel" name="av2_2">
+       <widget class="QLabel" name="lblV1_to_Patch">
         <property name="geometry">
          <rect>
           <x>10</x>
           <y>10</y>
-          <width>261</width>
-          <height>161</height>
+          <width>831</width>
+          <height>171</height>
          </rect>
         </property>
         <property name="text">
@@ -282,48 +295,35 @@
         </property>
        </widget>
       </widget>
-     </widget>
-     <widget class="QSlider" name="patch_slider">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>260</y>
-        <width>891</width>
-        <height>22</height>
-       </rect>
-      </property>
-      <property name="orientation">
-       <enum>Qt::Horizontal</enum>
-      </property>
      </widget>
      <widget class="QScrollArea" name="scrollArea_5">
       <property name="geometry">
        <rect>
         <x>10</x>
-        <y>20</y>
-        <width>281</width>
-        <height>181</height>
+        <y>220</y>
+        <width>851</width>
+        <height>191</height>
        </rect>
       </property>
       <property name="widgetResizable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="scrollAreaWidgetContents_5">
+      <widget class="QWidget" name="scrollAreaWidgetContents_8">
        <property name="geometry">
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>279</width>
-         <height>179</height>
+         <width>849</width>
+         <height>189</height>
         </rect>
        </property>
-       <widget class="QLabel" name="av1_2">
+       <widget class="QLabel" name="lblDiff">
         <property name="geometry">
          <rect>
           <x>10</x>
           <y>10</y>
-          <width>261</width>
-          <height>161</height>
+          <width>831</width>
+          <height>171</height>
          </rect>
         </property>
         <property name="text">
@@ -331,6 +331,55 @@
         </property>
        </widget>
       </widget>
+     </widget>
+     <widget class="QScrollArea" name="scrollArea_10">
+      <property name="geometry">
+       <rect>
+        <x>10</x>
+        <y>430</y>
+        <width>851</width>
+        <height>191</height>
+       </rect>
+      </property>
+      <property name="widgetResizable">
+       <bool>true</bool>
+      </property>
+      <widget class="QWidget" name="scrollAreaWidgetContents_10">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>849</width>
+         <height>189</height>
+        </rect>
+       </property>
+       <widget class="QLabel" name="lblPatchResult">
+        <property name="geometry">
+         <rect>
+          <x>10</x>
+          <y>10</y>
+          <width>831</width>
+          <height>171</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>TextLabel</string>
+        </property>
+       </widget>
+      </widget>
+     </widget>
+     <widget class="QPushButton" name="btn_saveVideoPatched">
+      <property name="geometry">
+       <rect>
+        <x>880</x>
+        <y>310</y>
+        <width>41</width>
+        <height>32</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>Save</string>
+      </property>
      </widget>
     </widget>
     <widget class="QWidget" name="tab_3">

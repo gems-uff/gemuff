@@ -8,7 +8,7 @@
 #include <QDebug>
 #include <QPainter>
 #include <QLabel>
-#include "diffprocessing.h"
+//#include "diffprocessing.h"
 
 namespace GEMUFF
 {

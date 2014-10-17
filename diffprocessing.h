@@ -8,6 +8,9 @@
 #include "helperfunctions.h"
 #include "diffalgorithms.h"
 #include <algorithm>
+#include <boost/filesystem.hpp>
+#include <iostream>
+#include <fstream>
 
 #define _DEBUG_TIME
 
@@ -104,10 +107,13 @@ namespace GEMUFF{
             int getFrameWidth(){ return mFrameWidth; }
             int getFrameHeight(){ return mFrameHeight; }
             int getFPS(){ return mFPS; }
+            bool SaveDiff(std::string filename);
 
 
             void CalculateDiff(Video *v1, Video *v2);
             std::vector<NodeDiff2>& getDiffData(){ return mDiffNodes; }
+
+            int Patch(Video *v2, std::string filename);
 
         private:
 

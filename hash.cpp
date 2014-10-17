@@ -24,6 +24,14 @@ namespace GEMUFF {
             return _hashKey;
         }
 
+        void MD5Hash::writeKey(std::ofstream &_fstream){
+            _fstream.write((char*)key, sizeof(unsigned char)*16);
+        }
+
+        void MD5Hash::readKey(std::ifstream &_ifstream){
+            _ifstream.read((char*)key, sizeof(unsigned char)*16);
+        }
+
         DCTHash* DCTHash::GenerateHash(VIMUFF::ImagePtr image){
 
             DCTHash *dctHash = new DCTHash();
@@ -74,7 +82,7 @@ namespace GEMUFF {
             x = (x & m2) + ((x >> 2) & m2);
             x = (x + (x >> 4)) & m4;
 
-            qDebug() << "h1: " << toString().c_str() << " h2: " << hash->toString().c_str() << " s: " << (((x * h01)>>56)/64.0);
+            //qDebug() << "h1: " << toString().c_str() << " h2: " << hash->toString().c_str() << " s: " << (((x * h01)>>56)/64.0);
             return 1.0 - (((x * h01)>>56)/64.0);
         }
 
@@ -430,13 +438,10 @@ namespace GEMUFF {
 
 
 
-        int MarrHildretchHash::HashSize = 72;
-        float MarrHildretchHash::Alpha = 2;
-        float MarrHildretchHash::Level = 1;
         MarrHildretchHash *MarrHildretchHash::GenerateHash(VIMUFF::ImagePtr image){
 
             MarrHildretchHash *mhHash = new MarrHildretchHash();
-            mhHash->hash = (unsigned char*)malloc(HashSize*sizeof(uint8_t));
+            mhHash->hash = (unsigned char*)malloc(MH_HASH_SIZE*sizeof(uint8_t));
 
 
 
@@ -445,15 +450,15 @@ namespace GEMUFF {
             VIMUFF::ImagePtr equalized (blurred->equalize());
 
 
-            int sigma = (int)4*pow((float)Alpha,(float)Level);
+            int sigma = (int)4*pow((float)MH_ALPHA,(float)MH_LEVEL);
             int width = (2*sigma+1);
             int height = (2*sigma+1);
             float kernel[width * height];
 
             for (int y = 0; y < height; y++){
                 for (int x = 0; x < width; x++){
-                    float xpos = pow(Alpha,-Level)*(x-sigma);
-                    float ypos = pow(Alpha,-Level)*(y-sigma);
+                    float xpos = pow(MH_ALPHA,-MH_LEVEL)*(x-sigma);
+                    float ypos = pow(MH_ALPHA,-MH_LEVEL)*(y-sigma);
                     float A = xpos*xpos + ypos*ypos;
 
                     kernel[y*width + x] = (2-A)*exp(-A/2);
@@ -524,27 +529,21 @@ namespace GEMUFF {
 
             double dist = 0;
             uint8_t D = 0;
-            for (int i=0;i<HashSize;i++){
+            for (int i=0;i<MH_HASH_SIZE;i++){
                 D = this->hash[i]^mhHash->hash[i];
                 dist = dist + (double)BitCount8(D);
             }
 
-            double bits = (double)HashSize*8;
+            double bits = (double)MH_HASH_SIZE*8;
             return dist/bits;
-        }
-
-        void MarrHildretchHash::Parameters(int _n, float _alpha, float _level){
-            HashSize = _n;
-            Alpha = _alpha;
-            Level = _level;
         }
 
         std::string MarrHildretchHash::toString(){
 
-            char *res = new char[HashSize*2];
-            memset(res, 0, sizeof(char) * HashSize * 2);
+            char *res = new char[MH_HASH_SIZE*2];
+            memset(res, 0, sizeof(char) * MH_HASH_SIZE * 2);
 
-            for (size_t k = 0; k < HashSize; k++)
+            for (size_t k = 0; k < MH_HASH_SIZE; k++)
                 sprintf(&res[k*2], "%02x", hash[k]);
 
             delete res;
@@ -564,5 +563,88 @@ namespace GEMUFF {
 
             return num;
         }
+
+        void MarrHildretchHash::writeKey(std::ofstream &_fstream){
+            _fstream.write((char*)&(*hash), sizeof(uint8_t)*MH_HASH_SIZE);
+        }
+
+        void MarrHildretchHash::readKey(std::ifstream &_ifstream){
+            hash = (unsigned char*)malloc(MH_HASH_SIZE*sizeof(uint8_t));
+            _ifstream.read((char*)hash, sizeof(uint8_t)&MH_HASH_SIZE);
+        }
+
+
+
+
+        bool write(std::ofstream &_ofstream, AbstractHashPtr hash){
+            bool isNull = (hash) ? false : true;
+
+            _ofstream.write((char*)&isNull, sizeof(bool));
+
+            if (!isNull){
+                int type = 0;
+                if (hash->Type() == T_MD5) type = 1;
+                if (hash->Type() == T_DCT) type = 2;
+                if (hash->Type() == T_MH) type = 3;
+
+                _ofstream.write((char*)&type, sizeof(int));
+                hash->writeKey(_ofstream);
+
+                // Check for data
+                AbstractHashPtr subData = hash->getData();
+
+                bool subDataIsNull = (subData) ? false : true;
+                _ofstream.write((char*) &subDataIsNull, sizeof(bool));
+
+                if (!subDataIsNull){
+                    int subType = 0;
+
+                    if (subData->Type() == T_MD5) subType = 1;
+                    if (subData->Type() == T_DCT) subType = 2;
+                    if (subData->Type() == T_MH) subType = 3;
+
+                    subData->writeKey(_ofstream);
+                }
+            }
+        }
+
+        AbstractHashPtr load(std::ifstream &_ifstream){
+
+            AbstractHashPtr res;
+
+            bool isNull;
+            _ifstream.read((char*)&isNull, sizeof(bool));
+
+            if (!isNull){
+                int type;
+                _ifstream.read((char*)&type, sizeof(int));
+
+                if (type == 1) res.reset(new MD5Hash);
+                if (type == 2) res.reset(new DCTHash);
+                if (type == 3) res.reset(new MarrHildretchHash);
+
+                res->readKey(_ifstream);
+
+                bool subDataIsNull;
+                _ifstream.read((char*)&subDataIsNull, sizeof(bool));
+
+                if (!subDataIsNull){
+                    int subType;
+                    _ifstream.read((char*)&subType, sizeof(int));
+
+                    AbstractHashPtr _subDataHash;
+
+                    if (subType == 1) _subDataHash.reset(new MD5Hash);
+                    if (subType == 2) _subDataHash.reset(new DCTHash);
+                    if (subType == 3) _subDataHash.reset(new MarrHildretchHash);
+
+                    _subDataHash->readKey(_ifstream);
+                    res->setData(_subDataHash);
+                }
+            }
+
+            return res;
+        }
+
     }
 }

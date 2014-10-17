@@ -8,18 +8,11 @@
 #include <QScrollArea>
 #include <QImageReader>
 #include <QFileDialog>
-#include "VideoProcessing.h"
+//#include "VideoProcessing.h"
 #include "video.h"
+#include "VideoPlayer.h"
 
 #include "diffplayer.h"
-
-struct FilmStripDiff
-{
-    GEMUFF::VIMUFF::_Operation op;
-    std::string hashV1;
-    std::string hashV2;
-    uint8_t* diff;
-};
 
 namespace Ui {
 class MainWindow;
@@ -62,8 +55,15 @@ private slots:
 
     void on_merge_slider_valueChanged(int value);
 
-private:
-    void GenerateFilmStripDiff();
+    void on_delta_open_clicked();
+
+    void on_btnLoadV1_clicked();
+
+    void on_btnDiffLoad_clicked();
+
+    void on_btnPatchProcess_clicked();
+
+    void on_btn_saveVideoPatched_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -76,14 +76,15 @@ private:
     GEMUFF::VIMUFF::Video v1;
     GEMUFF::VIMUFF::Video v2;
     GEMUFF::VIMUFF::Video base;
-    GEMUFF::VIMUFF::Diff2Processing diffProcessing;
-    GEMUFF::VIMUFF::MergeProcessing mergeProcessing;
-    std::vector<FilmStripDiff> filmStripDiff;
-    GEMUFF::VIMUFF::sMergeLines mergeLines;
-    GEMUFF::VIMUFF::Frame_Diff* current_v1_item;
-    GEMUFF::VIMUFF::Frame_Diff* current_v2_item;
-    GEMUFF::VIMUFF::Frame_Diff* current_final_item;
+    GEMUFF::Diff::Diff2Info diff2Info;
+    //GEMUFF::VIMUFF::MergeProcessing mergeProcessing;
+    //GEMUFF::VIMUFF::sMergeLines mergeLines;
+    //GEMUFF::VIMUFF::Frame_Diff* current_v1_item;
+    //GEMUFF::VIMUFF::Frame_Diff* current_v2_item;
+    //GEMUFF::VIMUFF::Frame_Diff* current_final_item;
     GEMUFF::VIMUFF::Diff2Player diffPlayer;
+    GEMUFF::VIMUFF::PatchPlayer patchPlayer;
+    GEMUFF::VIMUFF::Video video_patched;
 };
 
 #endif // MAINWINDOW_H

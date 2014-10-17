@@ -4,7 +4,8 @@
 #include <QLabel>
 #include <QPainter>
 #include "player.h"
-#include "diffprocessing.h"
+#include "imageregister.h"
+#include "diffalgorithms.h"
 
 
 namespace GEMUFF{
@@ -14,9 +15,9 @@ namespace GEMUFF{
          * Forward declaration
          */
         struct DiffFramePlayer{
-            Hash::AbstractHashPtr v1;
-            Hash::AbstractHashPtr v2;
-            Operation op;
+            VIMUFF::ImagePtr v1;
+            VIMUFF::ImagePtr v2;
+            Diff::DiffOperation op;
         };
 
         class Diff2Player : public Player
@@ -24,7 +25,8 @@ namespace GEMUFF{
         public:
             Diff2Player();
             void SetDisplays(QLabel* _v1, QLabel* _v2, QLabel* _diff);
-            void SetDiffPlayer(Diff2Processing* diff);
+            void SetData(Diff::Diff2Info *_diff2);
+            void SetVideo(Video *_v1){ video1 = _v1; }
             int GetTimelineLenght();
             void SetTime(int time);
 
@@ -32,12 +34,13 @@ namespace GEMUFF{
             void GenerateDiffPlayerData();
 
         private:
-            Diff2Processing* diffProcessing;
+            Diff::Diff2Info *diff2;
             int currentIndex;
             std::vector<DiffFramePlayer> mFrames;
             QLabel* video_1;
             QLabel* video_2;
             QLabel* video_diff;
+            Video* video1;
         };
     }
 }

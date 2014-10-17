@@ -14,16 +14,31 @@ namespace GEMUFF
     namespace VIMUFF
     {
 
+        struct ImageData {
+            Hash::AbstractHashPtr hash;
+            ImagePtr image;
+
+            ImageData(){}
+
+            ImageData(Hash::AbstractHashPtr _hash, ImagePtr _image){
+                hash = _hash;
+                image = _image;
+            }
+        };
+
         class ImageRegister
         {
         public:
             static Hash::AbstractHashPtr RegisterFrame(unsigned char* buffer, int width, int height, int bpp);
+            static Hash::AbstractHashPtr RegisterFrame(VIMUFF::ImagePtr image);
             static VIMUFF::ImagePtr ImageAt(Hash::AbstractHashPtr _hash);
             static QImage ProcessGPUDiff(QImage* img1, QImage* img2);
+            static QImage ProcessGPUPatch(QImage* img1, QImage* img2);
             static void Debug();
+            static ImagePtr toImage(QImage *im);
 
         private:
-            static std::map<Hash::AbstractHashPtr,ImagePtr> m_Frames;
+            static std::map<std::string,ImageData> m_Frames;
         };
     }
 }

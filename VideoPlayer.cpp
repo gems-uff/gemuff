@@ -1,37 +1,63 @@
-#include "diffplayer.h"
+#include <VideoPlayer.h>
 
 namespace GEMUFF {
     namespace VIMUFF {
 
-        Diff2Player::Diff2Player(){
-            numChannels = 2;
-            currentIndex = 0;
+        void VideoPlayer::setSlider(QSlider *_slider){
+            slider = _slider;
+
+            QObject::connect(slider, SIGNAL(valueChanged(int)),
+                    this, SLOT(setTimer(int)));
         }
 
-        void Diff2Player::SetDisplays(QLabel *_v1, QLabel *_v2, QLabel *_diff){
-            video_1 = _v1;
-            video_2 = _v2;
-            video_diff = _diff;
+        void VideoPlayer::setTimer(int time){
+            qDebug() << time;
+            currentIndex = time;
+
+
+                QImage v1_img((video->getFrameWidth() + 10) * bufferSize + 20,
+                              video->getFrameHeight() + 20, QImage::Format_RGB32);
+
+
+
+
+                v1_img.fill(Qt::black);
+
+                int max_frames = bufferSize > (totalFrames - currentIndex) ? totalFrames - currentIndex : bufferSize;
+
+                QPainter painter(&v1_img);
+
+                QPen pen;
+                pen.setColor(Qt::red);
+                pen.setWidth(5);
+
+               for (int i = 0; i < max_frames; i++){
+
+                    QPoint dest(10 + (video->getFrameWidth() + 10) * i, 10);
+
+                    QRect rect(dest.x()-10, dest.y()-10,
+                               video->getFrameWidth()+10, video->getFrameHeight()+10);
+
+                    QImage _v1 = ImageRegister::ImageAt(video->getHashAtFrame(currentIndex+i))->toQImage();
+
+                    painter.drawImage(dest, _v1);
+                }
+
+                painter.end();
+                display->clear();
+
+                display->setPixmap(QPixmap::fromImage(v1_img));
         }
 
 
-        void Diff2Player::SetData(Diff::Diff2Info *_diff2){
-            diff2 = _diff2;
 
-            GenerateDiffPlayerData();
-        }
 
-        int Diff2Player::GetTimelineLenght(){
-            return mFrames.size();
-        }
-
-        void Diff2Player::GenerateDiffPlayerData(){
-
+        void PatchPlayer::InternalProcess(){
             int current_index = 0;
             int current_chunk_idx = 0;
 
             std::vector<Hash::AbstractHashPtr> _v1Hash =
-                    video1->getSequenceHash();
+                    v1->getSequenceHash();
 
             while (current_index < _v1Hash.size()){
 
@@ -65,21 +91,16 @@ namespace GEMUFF {
                     current_chunk_idx++;
                 }
 
-                if (current_index < _v1Hash.size()){
+                ImagePtr _img = ImageRegister::ImageAt(_v1Hash[current_index]);
 
-                    ImagePtr _img = ImageRegister::ImageAt(_v1Hash[current_index]);
+                DiffFramePlayer frame;
+                frame.v1 = _img;
+                frame.v2 = _img;
+                frame.op = Diff::DO_None;
+                mFrames.push_back(frame);
 
-                    DiffFramePlayer frame;
-                    frame.v1 = _img;
-                    frame.v2 = _img;
-                    frame.op = Diff::DO_None;
-                    mFrames.push_back(frame);
-
-
-                }
                 current_index++;
             }
-
 
             while (current_chunk_idx < diff2->diff2Chunks.size()){
                 Diff::Diff2Chunk _chunk = diff2->diff2Chunks[current_chunk_idx];
@@ -111,11 +132,17 @@ namespace GEMUFF {
                 current_chunk_idx++;
             }
 
-            qDebug() << "Frames: " << mFrames.size();
+            slider->setMaximum(mFrames.size()-1);
         }
 
+        void PatchPlayer::setSlider(QSlider *_slider){
+            slider = _slider;
 
-        void Diff2Player::SetTime(int time){
+            QObject::connect(slider, SIGNAL(valueChanged(int)),
+                    this, SLOT(setTimer(int)));
+        }
+
+        void PatchPlayer::setTimer(int time){
             currentIndex = time;
 
             DiffFramePlayer _current =

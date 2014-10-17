@@ -30,7 +30,7 @@ namespace GEMUFF {
             }
 
             void loadFromFile(char* filename);
-
+            cv::Mat& getOpenCVMat(){ return image_data; }
             int getWidth(){ return image_data.cols; }
             int getHeight(){ return image_data.rows; }
             int getChannels(){ return image_data.channels(); }
@@ -64,7 +64,7 @@ namespace GEMUFF {
             double mean();
 
             const uchar* data() const {
-                return image_data.ptr();
+                return image_data.data;
             }
 
             boost::shared_ptr<Image> getGrayResizedThumb(){

@@ -8,38 +8,43 @@ QT       += core gui declarative widgets
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
+OPENCV = /Users/josericardo/Libs/opencv-2.4.8/inst
+
 TARGET = GEMUFF
 TEMPLATE = app
-INCLUDEPATH += /opt/local/include /usr/local/include
-QMAKE_LIBDIR += /opt/local/lib /usr/local/lib
-LIBS += -lavcodec -lavformat -lswscale -lavutil -lssl -lcrypto -lopencv_core -lopencv_highgui -lopencv_imgproc  -lopencv_gpu
+INCLUDEPATH += /opt/local/include /usr/local/include /usr/include/ffmpeg $${OPENCV}/include
+QMAKE_LIBDIR += /opt/local/lib /usr/local/lib $${OPENCV}/lib
+LIBS += -lavcodec -lavformat -lswscale -lavutil -lssl -lcrypto -lopencv_core -lopencv_highgui -lopencv_imgproc  -lopencv_gpu -lboost_filesystem -lboost_system
+message("libs:" $$QMAKE_LIBDIR)
 
 SOURCES += main.cpp \
         mainwindow.cpp \
     video.cpp \
     imageregister.cpp \
-    VideoProcessing.cpp \
-    diffprocessing.cpp \
+    #VideoProcessing.cpp \
+    #diffprocessing.cpp \
     player.cpp \
     diffplayer.cpp \
     helperfunctions.cpp \
     diffalgorithms.cpp \
     hash.cpp \
-    image.cpp
+    image.cpp \
+    VideoPlayer.cpp
 
 HEADERS  += mainwindow.h \
     K_IMUFF.h \
     video.h \
     imageregister.h \
-    VideoProcessing.h \
-    diffprocessing.h \
+    #VideoProcessing.h \
+    #diffprocessing.h \
     player.h \
     diffplayer.h \
     helperfunctions.h \
     GEMUFF.h \
     diffalgorithms.h \
     hash.h \
-    image.h
+    image.h \
+    VideoPlayer.h
 
 FORMS    += mainwindow.ui
 
@@ -47,14 +52,14 @@ QMAKE_LFLAGS += '-Wl,-rpath,/usr/local/cuda/lib'
 
 CUDA_SOURCES = K_IMUFF.cu
 
-unix:macx {
+unix {
    # CUDA_INSTALL_PATH = $$quote(/usr/local/cuda)
    # CUDA_SDK_PATH     = $$quote("/Developer/GPU Computing/C")
    # CUDA_INCLUDES     = -I$${CUDA_INSTALL_PATH}/include -I$${CUDA_SDK_PATH}/common/inc
    # CUDA_LIBS         = -L$${CUDA_INSTALL_PATH}/lib -L$${CUDA_SDK_PATH}/lib
 
         # auto-detect CUDA path
-    CUDA_PATH       = /Developer/NVIDIA/CUDA-5.5
+    CUDA_PATH       = /usr/local/cuda
     CUDA_INC_PATH   = $$CUDA_PATH/include
 
     #CUDA_DIR = /usr/local/cuda

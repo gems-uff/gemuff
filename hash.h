@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include <iostream>
+#include <fstream>
 #include "openssl/md5.h"
 //#include "CImg.h"
 #include "GEMUFF.h"
@@ -22,6 +23,10 @@
     #include <npp.h>
     #include <helper_cuda.h>
 #endif
+
+#define MH_HASH_SIZE  72
+#define MH_ALPHA  2
+#define MH_LEVEL  1
 
 namespace GEMUFF {
 
@@ -80,9 +85,13 @@ namespace GEMUFF {
 
             HashType Type(){ return hashType; }
 
+            virtual void writeKey(std::ofstream& _fstream) = 0;
+            virtual void readKey(std::ifstream &_ifstream) = 0;
+
             virtual std::string toString() = 0;
 
-            bool operator < (AbstractHash &h2){
+            virtual bool operator < (AbstractHash &h2){
+                printf("\nEqual: %s - %s", this->toString().c_str(), h2.toString().c_str());
                 return this->toString() < h2.toString();
             }
 
@@ -112,7 +121,7 @@ namespace GEMUFF {
         private:
             unsigned char key[16];
 
-        private:
+        public:
             MD5Hash() : AbstractHash(T_MD5) {
             }
 
@@ -121,9 +130,12 @@ namespace GEMUFF {
 
             std::string toString();
 
+             void writeKey(std::ofstream& _fstream);
+             void readKey(std::ifstream &_ifstream);
+
             double getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash){
 
-                if (toString() == hash->toString())
+                if (toString().compare(hash->toString()) == 0)
                     return 1.0f;
 
                 return 0;
@@ -181,14 +193,17 @@ namespace GEMUFF {
             ulong64 hash;
 
         private:
-            DCTHash() : AbstractHash(T_DCT){
-            }
 
             int BitCount8(long64 val);
 
             public:
+            DCTHash() : AbstractHash(T_DCT){
+            }
 
             static DCTHash* GenerateHash(VIMUFF::ImagePtr image);
+
+            void writeKey(std::ofstream& _fstream){}
+            void readKey(std::ifstream &_ifstream){}
 
             double getSimilarity(boost::shared_ptr<Hash::AbstractHash> hash);
 
@@ -202,20 +217,19 @@ namespace GEMUFF {
 
         class MarrHildretchHash : public AbstractHash {
         private:
-            static int HashSize;
-            static float Alpha;
-            static float Level;
             uint8_t *hash;
 
         private:
-            MarrHildretchHash() : AbstractHash(T_MH){
-            }
+
 
             //static cimg_library::CImg<float> *GetMHKernel(float _alpha, float _level);
 
             int static BitCount8(uint8_t val);
 
         public:
+            MarrHildretchHash() : AbstractHash(T_MH){
+            }
+
             static MarrHildretchHash *GenerateHash(VIMUFF::ImagePtr image);
 
             static std::vector<AbstractHashPtr>
@@ -225,12 +239,18 @@ namespace GEMUFF {
 
             std::string toString();
 
-            static void Parameters(int _n, float _alpha, float _level);
+            void writeKey(std::ofstream& _fstream);
+            void readKey(std::ifstream &_ifstream);
 
             ~MarrHildretchHash(){ free(hash); }
         };
 
 
+
+
+      bool write(std::ofstream &_ofstream, AbstractHashPtr hash);
+      
+      AbstractHashPtr load(std::ifstream &_ifstream);
 
     }
 }

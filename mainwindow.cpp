@@ -1,6 +1,6 @@
 #include "mainwindow.h"
-#include "ui_mainwindow.h"
-#include "videoprocessing.h"
+#include <ui_mainwindow.h>
+//#include "videoprocessing.h"
 
 /*IplImage* QImage2IplImage(QImage *qimg)
 {
@@ -24,6 +24,7 @@ MainWindow::MainWindow(QWidget *parent) :
     imgDisplayLabel = new QLabel("");
     scrollArea = new QScrollArea();
 
+    avcodec_register_all();
     av_register_all();
 }
 
@@ -42,11 +43,12 @@ void MainWindow::on_pushButton_clicked()
     ui->slider->setMinimum(0);
 
     // Processar a diferenca
-    diffProcessing.CalculateDiff(&v1, &v2);
-
-    diffPlayer.SetDiffPlayer(&diffProcessing);
+    diff2Info = GEMUFF::Diff::Diff2(&v1, &v2, 0.3f);
+    diffPlayer.SetVideo(&v1);
+    diffPlayer.SetData(&diff2Info);
     diffPlayer.SetBufferSize(5);
     diffPlayer.SetDisplays(ui->av1, ui->av2, ui->avFinal);
+
 
     //qDebug() << "Frames on Main: " << diffPlayer.GetTimelineLenght();
 
@@ -178,61 +180,20 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::on_pushButton_2_clicked()
 {
-    GEMUFF::VIMUFF::PatchProcessing p;
+    /*GEMUFF::VIMUFF::PatchProcessing p;
     v2 = p.Patch(&v1, diffProcessing);
 
     ui->patch_slider->setMinimum(0);
-    ui->patch_slider->setMaximum(v2.getNumFrames()-1);
+    ui->patch_slider->setMaximum(v2.getNumFrames()-1);*/
 }
 
 void MainWindow::on_slider_valueChanged(int value)
 {
     //diffPlayer.BufferAtTime(value, img);
     //ui->av1->setPixmap(QPixmap::fromImage(img));
+    qDebug() << value;
     diffPlayer.SetTime(value);
 
-    /*
-    FilmStripDiff _diff = filmStripDiff[value];
-
-    QImage *_img1 = GEMUFF::VIMUFF::ImageRegister::ImageAt(_diff.hashV1);
-    QImage *_img2 = GEMUFF::VIMUFF::ImageRegister::ImageAt(_diff.hashV2);
-
-    ui->av1->setPixmap(QPixmap::fromImage(*_img1));
-    ui->av2->setPixmap(QPixmap::fromImage(*_img2));
-
-
-    // Verificar a operacao
-    if (_diff.op == GEMUFF::VIMUFF::NONE)
-    {
-        ui->avFinal->clear();
-        QPalette pallete2;
-        pallete2.setColor(backgroundRole(), Qt::black);
-        ui->scrollArea_3->setPalette(pallete2);
-    } else if (_diff.op == GEMUFF::VIMUFF::XOR)
-    {
-        QImage df = QImage((uchar*)_diff.diff, _img1->width(), _img2->height(), QImage::Format_RGB32);
-        ui->avFinal->setPixmap(QPixmap::fromImage(df));
-
-        QPalette pallete;
-        pallete.setColor(backgroundRole(), Qt::yellow);
-        ui->scrollArea_3->setPalette(pallete);
-    } else if (_diff.op == GEMUFF::VIMUFF::ADD)
-    {
-        QImage df = QImage((uchar*)_diff.diff, _img1->width(), _img2->height(), QImage::Format_RGB32);
-        ui->avFinal->setPixmap(QPixmap::fromImage(df));
-
-        QPalette pallete;
-        pallete.setColor(backgroundRole(), Qt::green);
-        ui->scrollArea_3->setPalette(pallete);
-    } else if (_diff.op == GEMUFF::VIMUFF::REMOVE)
-    {
-        QImage df = QImage((uchar*)_diff.diff, _img1->width(), _img2->height(), QImage::Format_RGB32);
-        ui->avFinal->setPixmap(QPixmap::fromImage(df));
-
-        QPalette pallete;
-        pallete.setColor(backgroundRole(), Qt::red);
-        ui->scrollArea_3->setPalette(pallete);
-    }*/
 }
 
 void MainWindow::on_v1_diff_load_clicked()
@@ -242,7 +203,6 @@ void MainWindow::on_v1_diff_load_clicked()
 
     if (file != NULL)
         v1.LoadVideo(file.toStdString());
-
 
     /*std::vector<std::string>& seq_hash = v1.getSequenceHash();
 
@@ -276,85 +236,20 @@ void MainWindow::on_v2_diff_load_clicked()
 
 void MainWindow::on_delta_save_clicked()
 {
-    QString file = QFileDialog::getSaveFileName(this, "Save Delta");
+    QString file = QFileDialog::getSaveFileName(this, "Save Delta",
+        QDir::currentPath(), "VIMUFF Delta (*.vimuff)", new QString("VIMUFF Delta (*.vimuff"));
 
     if (file != NULL)
     {
-        //diffProcessing.SaveDiff(file.toStdString());
+        std::ofstream _diffFile;
+
+        _diffFile.open(file.toStdString().c_str(),
+                       std::ios::binary | std::ios::out | std::ios::app);
+        diff2Info.write(_diffFile);
+
+        _diffFile.close();
     }
-
 }
-
-void MainWindow::GenerateFilmStripDiff()
-{
- /*   std::vector<std::string>& v1_strip = v1.getSequenceHash();
-    std::vector<std::string>& v2_strip = v2.getSequenceHash();
-
-    int _frame_size = v1.getFrameWidth() * v2.getFrameHeight() * 4;
-
-    int v1_frame_index = 0;
-    int v2_frame_index = 0;
-
-    while (v1_frame_index < v1_strip.size())
-    {
-        // Verificar se existe operacoes nesse frame
-        GEMUFF::VIMUFF::Frame_Diff *_diff =
-                diffProcessing.DiffAtFrame(v1_frame_index);
-
-        if (_diff == NULL)
-        {
-            FilmStripDiff _filmdiff;
-            _filmdiff.op = GEMUFF::VIMUFF::NONE;
-            _filmdiff.hashV1 = v1_strip[v1_frame_index++];
-            _filmdiff.hashV2 = v2_strip[v2_frame_index++];
-            _filmdiff.diff = NULL;
-
-            filmStripDiff.push_back(_filmdiff);
-        }
-        else
-        {
-            // Verificar a operacao
-            if (_diff->op == GEMUFF::VIMUFF::REMOVE)
-            {
-                for (int k = 0; k < _diff->numFrames; k++)
-                {
-                    FilmStripDiff _filmdiff;
-                    _filmdiff.op = _diff->op;
-                    _filmdiff.hashV1 = v1_strip[v1_frame_index++];
-                    _filmdiff.hashV2 = v2_strip[v2_frame_index];
-                    _filmdiff.diff = &_diff->buffer[_frame_size*k];
-
-                    filmStripDiff.push_back(_filmdiff);
-                }
-            } else if (_diff->op == GEMUFF::VIMUFF::ADD)
-            {
-                for (int k = 0; k < _diff->numFrames; k++)
-                {
-                    FilmStripDiff _filmdiff;
-                    _filmdiff.op = _diff->op;
-                    _filmdiff.hashV1 = v1_strip[v1_frame_index];
-                    _filmdiff.hashV2 = v2_strip[v2_frame_index++];
-                    _filmdiff.diff = &_diff->buffer[_frame_size*k];
-
-                    filmStripDiff.push_back(_filmdiff);
-                }
-            } else if (_diff->op == GEMUFF::VIMUFF::XOR)
-            {
-                for (int k = 0; k < _diff->numFrames; k++)
-                {
-                    FilmStripDiff _filmdiff;
-                    _filmdiff.op = _diff->op;
-                    _filmdiff.hashV1 = v1_strip[v1_frame_index++];
-                    _filmdiff.hashV2 = v2_strip[v2_frame_index++];
-                    _filmdiff.diff = &_diff->buffer[_frame_size*k];
-
-                    filmStripDiff.push_back(_filmdiff);
-                }
-            }
-        }
-    }*/
-}
-
 
 
 void MainWindow::on_v1_load_patch_load_clicked()
@@ -363,15 +258,15 @@ void MainWindow::on_v1_load_patch_load_clicked()
                   tr("Videos (*.avi *.mpg *.mov)"));
 
     if (file != NULL)
-        v1.LoadVideo(file.toStdString());
+        v2.LoadVideo(file.toStdString());
 }
 
 void MainWindow::on_delta_patch_load_clicked()
 {
-    /*QString file = QFileDialog::getOpenFileName(this, "Delta");
+    QString file = QFileDialog::getOpenFileName(this, "Delta");
 
-    if (file != NULL)
-        diffProcessing.LoadDiff(file.toStdString());*/
+    //if (file != NULL)
+      //  diff2Data.Load("Teste");
 }
 
 void MainWindow::on_patch_slider_valueChanged(int value)
@@ -766,5 +661,70 @@ void MainWindow::on_merge_slider_valueChanged(int value)
 
 
     // Video 2
+
+}
+
+void MainWindow::on_delta_open_clicked()
+{
+
+}
+
+void MainWindow::on_btnLoadV1_clicked()
+{
+    QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
+                 // tr("Videos (*.avi *.mpg *.mov)"));
+
+    if (file != NULL)
+        v1.LoadVideo(file.toStdString());
+}
+
+void MainWindow::on_btnDiffLoad_clicked()
+{
+    QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
+                 // tr("Videos (*.avi *.mpg *.mov)"));
+
+    if (file != NULL){
+        std::ifstream _delta;
+        _delta.open(file.toStdString().c_str(),
+                   std::ios::binary | std::ios::out | std::ios::app);
+        diff2Info.read(_delta);
+        diff2Info.Debug();
+        _delta.close();
+    }
+}
+
+void MainWindow::on_btnPatchProcess_clicked()
+{
+    // setar o slider
+    ui->slider->setMinimum(0);
+
+    // Processar a diferenca
+    patchPlayer.setVideo(&v1);
+    patchPlayer.setDisplay(ui->lblV1_to_Patch, ui->lblDiff, ui->lblPatchResult);
+    patchPlayer.setSlider(ui->patch_slider);
+    //patchPlayer.SetBufferSize(5);
+    patchPlayer.Process(&diff2Info);
+
+
+    //qDebug() << "Frames on Main: " << diffPlayer.GetTimelineLenght();
+
+    //ui->slider->setMaximum(diffPlayer.GetTimelineLenght()-1);
+
+    ui->lblV1_to_Patch->setScaledContents(true);
+    ui->lblDiff->setScaledContents(true);
+    ui->lblPatchResult->setScaledContents(true);
+
+
+
+}
+
+void MainWindow::on_btn_saveVideoPatched_clicked()
+{
+    GEMUFF::VIMUFF::Video videoPatched =
+            GEMUFF::Diff::Patch(diff2Info, &v1);
+
+
+    // v_t.LoadFromImages(v1.getSequenceHash(), 960, 540,
+      //                  AV_CODEC_ID_RAWVIDEO, AV_PIX_FMT_RGB32, AV_PIX_FMT_YUV420P, 400000, 30, v1.getFormatContext());
 
 }
