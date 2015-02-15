@@ -35,30 +35,30 @@ namespace GEMUFF {
 
             while (current_index < _v1Hash.size()){
 
-                while (current_chunk_idx < diff2->diff2Chunks.size()){
-                    Diff::Diff2Chunk _chunk = diff2->diff2Chunks[current_chunk_idx];
+                while (current_chunk_idx < diff2->diffChunks.size()){
+                    Diff::DiffChunk _chunk = diff2->diffChunks[current_chunk_idx];
 
                     if (_chunk.index > current_index)
                         break;
 
-                    if (_chunk.op == Diff::DO_Change){
+                    if (_chunk.diffData.op == Diff::DO_Change){
                         DiffFramePlayer frame;
-                        frame.op = _chunk.op;
-                        frame.v1 = _chunk.v1_Image;
-                        frame.v2 = _chunk.v2_Image;
+                        frame.op = _chunk.diffData.op;
+                        frame.v1 = _chunk.diffData.v1_Image;
+                        frame.v2 = _chunk.diffData.v2_Image;
                         mFrames.push_back(frame);
                         current_index++;
                         current_chunk_idx++;
                         continue;
-                    } else if (_chunk.op == Diff::DO_Remove){
+                    } else if (_chunk.diffData.op == Diff::DO_Remove){
                         DiffFramePlayer frame;
-                        frame.op = _chunk.op;
-                        frame.v1 = _chunk.v1_Image;
+                        frame.op = _chunk.diffData.op;
+                        frame.v1 = _chunk.diffData.v1_Image;
                         mFrames.push_back(frame);
-                     } else if (_chunk.op == Diff::DO_Add){
+                     } else if (_chunk.diffData.op == Diff::DO_Add){
                         DiffFramePlayer frame;
-                        frame.op = _chunk.op;
-                        frame.v2 = _chunk.v2_Image;
+                        frame.op = _chunk.diffData.op;
+                        frame.v2 = _chunk.diffData.v2_Image;
                         mFrames.push_back(frame);
                     }
 
@@ -81,30 +81,30 @@ namespace GEMUFF {
             }
 
 
-            while (current_chunk_idx < diff2->diff2Chunks.size()){
-                Diff::Diff2Chunk _chunk = diff2->diff2Chunks[current_chunk_idx];
+            while (current_chunk_idx < diff2->diffChunks.size()){
+                Diff::DiffChunk _chunk = diff2->diffChunks[current_chunk_idx];
 
                 if (_chunk.index > current_index)
                     break;
 
-                if (_chunk.op == Diff::DO_Change){
+                if (_chunk.diffData.op == Diff::DO_Change){
                     DiffFramePlayer frame;
-                    frame.op = _chunk.op;
-                    frame.v1 = _chunk.v1_Image;
-                    frame.v2 = _chunk.v2_Image;
+                    frame.op = _chunk.diffData.op;
+                    frame.v1 = _chunk.diffData.v1_Image;
+                    frame.v2 = _chunk.diffData.v2_Image;
                     mFrames.push_back(frame);
                     current_index++;
                     current_chunk_idx++;
                     continue;
-                } else if (_chunk.op == Diff::DO_Remove){
+                } else if (_chunk.diffData.op == Diff::DO_Remove){
                     DiffFramePlayer frame;
-                    frame.op = _chunk.op;
-                    frame.v1 = _chunk.v1_Image;
+                    frame.op = _chunk.diffData.op;
+                    frame.v1 = _chunk.diffData.v1_Image;
                     mFrames.push_back(frame);
-                 } else if (_chunk.op == Diff::DO_Add){
+                 } else if (_chunk.diffData.op == Diff::DO_Add){
                     DiffFramePlayer frame;
-                    frame.op = _chunk.op;
-                    frame.v2 = _chunk.v2_Image;
+                    frame.op = _chunk.diffData.op;
+                    frame.v2 = _chunk.diffData.v2_Image;
                     mFrames.push_back(frame);
                 }
 

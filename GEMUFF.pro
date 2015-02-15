@@ -29,7 +29,8 @@ SOURCES += main.cpp \
     diffalgorithms.cpp \
     hash.cpp \
     image.cpp \
-    VideoPlayer.cpp
+    VideoPlayer.cpp \
+    mergeplayer.cpp
 
 HEADERS  += mainwindow.h \
     K_IMUFF.h \
@@ -44,7 +45,8 @@ HEADERS  += mainwindow.h \
     diffalgorithms.h \
     hash.h \
     image.h \
-    VideoPlayer.h
+    VideoPlayer.h \
+    mergeplayer.h
 
 FORMS    += mainwindow.ui
 

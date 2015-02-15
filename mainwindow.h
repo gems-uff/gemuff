@@ -13,6 +13,7 @@
 #include "VideoPlayer.h"
 
 #include "diffplayer.h"
+#include  "mergeplayer.h"
 
 namespace Ui {
 class MainWindow;
@@ -65,6 +66,8 @@ private slots:
 
     void on_btn_saveVideoPatched_clicked();
 
+    void on_base_merge_load_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -77,6 +80,7 @@ private:
     GEMUFF::VIMUFF::Video v2;
     GEMUFF::VIMUFF::Video base;
     GEMUFF::Diff::Diff2Info diff2Info;
+    GEMUFF::Diff::Diff3Info diff3Info;
     //GEMUFF::VIMUFF::MergeProcessing mergeProcessing;
     //GEMUFF::VIMUFF::sMergeLines mergeLines;
     //GEMUFF::VIMUFF::Frame_Diff* current_v1_item;
@@ -84,6 +88,7 @@ private:
     //GEMUFF::VIMUFF::Frame_Diff* current_final_item;
     GEMUFF::VIMUFF::Diff2Player diffPlayer;
     GEMUFF::VIMUFF::PatchPlayer patchPlayer;
+    GEMUFF::VIMUFF::MergePlayer mergePlayer;
     GEMUFF::VIMUFF::Video video_patched;
 };
 

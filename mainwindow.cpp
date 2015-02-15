@@ -279,6 +279,27 @@ void MainWindow::on_patch_slider_valueChanged(int value)
 
 void MainWindow::on_btnProcessMerge_clicked()
 {
+   ui->merge_slider->setMinimum(0);
+
+    diff3Info = GEMUFF::Diff::Diff3(&base, &v1, &v2, 0.3);
+    mergePlayer.SetDisplays(ui->lblBaseMerge, ui->lblV1Merge, ui->lblV2Merge, ui->lblResultMerge);
+    mergePlayer.SetBase(&base);
+    mergePlayer.SetData(&diff3Info);
+    mergePlayer.SetBufferSize(5);
+
+
+
+    //qDebug() << "Frames on Main: " << diffPlayer.GetTimelineLenght();
+
+    ui->merge_slider->setMaximum(mergePlayer.GetTimelineLenght()-1);
+
+    ui->lblBaseMerge->setScaledContents(true);
+    ui->lblV1Merge->setScaledContents(true);
+    ui->lblV2Merge->setScaledContents(true);
+    ui->lblResultMerge->setScaledContents(true);
+
+
+
     /*mergeProcessing.Merge(&base, &v1, &v2);
 
     // Recuperar a tabela de merge
@@ -307,24 +328,17 @@ void MainWindow::on_base_load_merge_clicked()
 
 void MainWindow::on_v1_merge_load_clicked()
 {
-    //QString file = QFileDialog::getOpenFileName(this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
-    //              tr("Videos (*.avi *.mpg *.mov)"));
+    QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
+                 // tr("Videos (*.avi *.mpg *.mov)"));
 
-    QString file = "/Users/josericardo/Desktop/A.mov";
-
-   /* if (file != NULL)
+    if (file != NULL)
         v1.LoadVideo(file.toStdString());
-
-    printf("\nV1: %s", file.toStdString().c_str());*/
 }
 
 void MainWindow::on_v2_merge_load_clicked()
 {
-    //QString file = QFileDialog::getOpenFileName(this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
-     //             tr("Videos (*.avi *.mpg *.mov)"));
-    QString file = "/Users/josericardo/Desktop/C.mov";
-
-    printf("\nV2: %s", file.toStdString().c_str());
+    QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
+                 // tr("Videos (*.avi *.mpg *.mov)"));
 
     if (file != NULL)
         v2.LoadVideo(file.toStdString());
@@ -332,336 +346,7 @@ void MainWindow::on_v2_merge_load_clicked()
 
 void MainWindow::on_merge_slider_valueChanged(int value)
 {
-/*
-    GEMUFF::VIMUFF::sMergeFrame* _basef = &mergeLines.channelBase[value];
-    GEMUFF::VIMUFF::sMergeFrame* _af = &mergeLines.channelA[value];
-    GEMUFF::VIMUFF::sMergeFrame* _bf = &mergeLines.channelB[value];
-
-    if (_basef->show)
-    {
-        QImage *_img1 = GEMUFF::VIMUFF::ImageRegister::ImageAt(_basef->frame_by_key);
-        ui->base_merge->setPixmap(QPixmap::fromImage(*_img1));
-        ui->lbl_base_paused->clear();
-    } else
-        ui->lbl_base_paused->setText("Paused");
-
-
-    if (_af->show)
-    {
-        ui->lbl_v1_paused->clear();
-
-        switch (_af->op)
-        {
-            case GEMUFF::VIMUFF::XOR:
-            {
-                QImage *_imgb = GEMUFF::VIMUFF::ImageRegister::ImageAt(_basef->frame_by_key);
-
-                uchar* _final = (uchar*) malloc(sizeof(uchar) * 4 * _imgb->width() * _imgb->height());
-
-                gIMUFFPatch(_imgb->constBits(),
-                        (uchar*)_af->data, &_final[0], _imgb->width() * _imgb->height());
-
-
-                QImage _v2 = QImage(_final,
-                            _imgb->width(), _imgb->height(), QImage::Format_RGB32);
-
-                ui->av1_merge->setPixmap(QPixmap::fromImage(_v2));
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::yellow);
-                ui->m_v1_sc->setPalette(pallete);
-
-            }
-            break;
-
-            case GEMUFF::VIMUFF::ADD:
-            {
-                QImage _v2 = QImage(_af->data,
-                            v1.getFrameWidth(), v1.getFrameHeight(), QImage::Format_RGB32);
-
-                ui->av1_merge->setPixmap(QPixmap::fromImage(_v2));
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::green);
-                ui->m_v1_sc->setPalette(pallete);
-            }
-            break;
-
-            case GEMUFF::VIMUFF::REMOVE:
-            {
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::red);
-                ui->m_v1_sc->setPalette(pallete);
-            }
-            break;
-
-            case GEMUFF::VIMUFF::NONE:
-            {
-                QImage *_imgb = GEMUFF::VIMUFF::ImageRegister::ImageAt(_af->frame_by_key);
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::gray);
-                ui->av1_merge->setPixmap(QPixmap::fromImage(*_imgb));
-                ui->m_v1_sc->setPalette(pallete);
-            }
-            break;
-        }
-    }
-    else
-        ui->lbl_v1_paused->setText("Paused");
-
-
-
-    if (_bf->show)
-    {
-        ui->lbl_v2_paused->clear();
-
-        switch (_bf->op)
-        {
-            case GEMUFF::VIMUFF::XOR:
-            {
-                QImage *_imgb = GEMUFF::VIMUFF::ImageRegister::ImageAt(_basef->frame_by_key);
-
-                uchar* _final = (uchar*) malloc(sizeof(uchar) * 4 * _imgb->width() * _imgb->height());
-
-                gIMUFFPatch(_imgb->constBits(),
-                        (uchar*)_bf->data, &_final[0], _imgb->width() * _imgb->height());
-
-
-                QImage _v2 = QImage(_final,
-                            _imgb->width(), _imgb->height(), QImage::Format_RGB32);
-
-                ui->av2_merge->setPixmap(QPixmap::fromImage(_v2));
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::yellow);
-                ui->m_v2_sc->setPalette(pallete);
-
-            }
-            break;
-
-            case GEMUFF::VIMUFF::REMOVE:
-            {
-                ui->lbl_v2_paused->setText("Removed");
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::red);
-                ui->m_v2_sc->setPalette(pallete);
-            }
-            break;
-
-            case GEMUFF::VIMUFF::ADD:
-            {
-                QImage _v2 = QImage(_bf->data,
-                            v2.getFrameWidth(), v2.getFrameHeight(), QImage::Format_RGB32);
-
-                ui->av2_merge->setPixmap(QPixmap::fromImage(_v2));
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::green);
-                ui->m_v2_sc->setPalette(pallete);
-            }
-            break;
-
-            case GEMUFF::VIMUFF::NONE:
-            {
-                QImage *_imgb = GEMUFF::VIMUFF::ImageRegister::ImageAt(_bf->frame_by_key);
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::gray);
-                ui->av2_merge->setPixmap(QPixmap::fromImage(*_imgb));
-                ui->m_v2_sc->setPalette(pallete);
-            }
-            break;
-        }
-    }
-    else
-        ui->lbl_v2_paused->setText("Paused");
-
-
-    // Canal Merge
-    GEMUFF::VIMUFF::sMergeResult* mergeResult = &mergeLines.channelMerge[value];
-
-    // Conflito?
-    if (mergeResult->conflicted)
-    {
-        ui->lbl_merge_paused->setText("Conflito!");
-    } else
-    {
-        ui->lbl_merge_paused->clear();
-
-        // Operacao
-        switch (mergeResult->op)
-        {
-            case GEMUFF::VIMUFF::XOR:
-            {
-                QImage *_imgb = GEMUFF::VIMUFF::ImageRegister::ImageAt(_basef->frame_by_key);
-
-                uchar* _final = (uchar*) malloc(sizeof(uchar) * 4 * _imgb->width() * _imgb->height());
-
-                gIMUFFPatch(_imgb->constBits(),
-                        (uchar*)mergeResult->data, &_final[0], _imgb->width() * _imgb->height());
-
-
-                QImage _v2 = QImage(_final,
-                            _imgb->width(), _imgb->height(), QImage::Format_RGB32);
-
-                ui->av_final_merge->setPixmap(QPixmap::fromImage(_v2));
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::yellow);
-                ui->m_merge_sc->setPalette(pallete);
-            }
-            break;
-
-
-            case GEMUFF::VIMUFF::ADD:
-            {
-                QImage _v2 = QImage(mergeResult->data,
-                            v2.getFrameWidth(), v2.getFrameHeight(), QImage::Format_RGB32);
-
-                ui->av_final_merge->setPixmap(QPixmap::fromImage(_v2));
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::green);
-                ui->m_merge_sc->setPalette(pallete);
-            }
-            break;
-
-            case GEMUFF::VIMUFF::NONE:
-            {
-                QImage *_imgb = GEMUFF::VIMUFF::ImageRegister::ImageAt(_bf->frame_by_key);
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::gray);
-                ui->av_final_merge->setPixmap(QPixmap::fromImage(*_imgb));
-                ui->m_merge_sc->setPalette(pallete);
-            }
-            break;
-        }
-
-        if (mergeResult->paused)
-           ui->lbl_merge_paused->setText("Paused");
-
-    }*/
-
-
-    /*else
-    {
-
-    }
-
-    if (item->v2_frame_diff != NULL)
-    {
-        switch (item->v2_frame_diff->op)
-        {
-            case GEMUFF::VIMUFF::XOR:
-            {
-                QImage _v2 = QImage((uchar*)&item->v2_frame_diff->buffer[item->v2_offset],
-                                _img1->width(), _img1->height(), QImage::Format_RGB32);
-                ui->av2_merge->setPixmap(QPixmap::fromImage(_v2));
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::yellow);
-                ui->m_v2_sc->setPalette(pallete);
-
-            }
-            break;
-
-            case GEMUFF::VIMUFF::ADD:
-            {
-                current_v2_item = item->v2_frame_diff;
-                ui->merge_v2_slider->setMinimum(0);
-                ui->merge_v2_slider->setMaximum(current_v2_item->numFrames-1);
-                QImage _v2 = QImage((uchar*)&current_v2_item->buffer[0],
-                            _img1->width(), _img1->height(), QImage::Format_RGB32);
-                ui->av2_merge->setPixmap(QPixmap::fromImage(_v2));
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::blue);
-                ui->m_v2_sc->setPalette(pallete);
-            }
-            break;
-
-            case GEMUFF::VIMUFF::REMOVE:
-            {
-                current_v2_item = item->v2_frame_diff;
-                ui->merge_v2_slider->setMinimum(0);
-                ui->merge_v2_slider->setMaximum(current_v2_item->numFrames-1);
-                QImage _v2 = QImage((uchar*)&current_v2_item->buffer[0],
-                        _img1->width(), _img1->height(), QImage::Format_RGB32);
-                ui->av2_merge->setPixmap(QPixmap::fromImage(_v2));
-
-                QPalette pallete;
-                pallete.setColor(backgroundRole(), Qt::darkMagenta);
-                ui->m_v2_sc->setPalette(pallete);
-            }
-            break;
-        }
-    }
-    else
-    {
-        QPalette pallete;
-        pallete.setColor(backgroundRole(), Qt::black);
-        ui->m_v2_sc->setPalette(pallete);
-        ui->av2_merge->clear();
-    }
-
-    if (item->v1_frame_diff != NULL && item->v2_frame_diff != NULL)
-    {
-        // conflito
-
-    }
-    else if (item->v1_frame_diff != NULL)
-    {
-        switch (item->v1_frame_diff->op)
-        {
-            case GEMUFF::VIMUFF::XOR:
-            {
-
-                uchar* _final = (uchar*) malloc(sizeof(uchar) * 4 * _img1->width() * _img1->height());
-
-                gIMUFFPatch(_img1->constBits(),
-                            &item->v1_frame_diff->buffer[item->v1_offset],
-                            &_final[0], _img1->width() * _img1->height());
-
-
-                QImage _v2 = QImage(_final,
-                                _img1->width(), _img1->height(), QImage::Format_RGB32);
-                ui->av_final_merge->setPixmap(QPixmap::fromImage(_v2));
-            }
-            break;
-        }
-    }
-    else if (item->v2_frame_diff != NULL)
-    {
-        switch (item->v2_frame_diff->op)
-        {
-            case GEMUFF::VIMUFF::XOR:
-            {
-
-                uchar* _final = (uchar*) malloc(sizeof(uchar) * 4 * _img1->width() * _img1->height());
-
-                gIMUFFPatch(_img1->constBits(),
-                            &item->v2_frame_diff->buffer[item->v2_offset],
-                            &_final[0], _img1->width() * _img1->height());
-
-
-                QImage _v2 = QImage(_final,
-                                _img1->width(), _img1->height(), QImage::Format_RGB32);
-                ui->av_final_merge->setPixmap(QPixmap::fromImage(_v2));
-            }
-            break;
-        }
-    }
-    else
-    {
-        ui->av_final_merge->setPixmap(QPixmap::fromImage(*_img1));
-    }*/
-
-
-
-    // Video 2
-
+    mergePlayer.SetTime(value);
 }
 
 void MainWindow::on_delta_open_clicked()
@@ -727,4 +412,13 @@ void MainWindow::on_btn_saveVideoPatched_clicked()
     // v_t.LoadFromImages(v1.getSequenceHash(), 960, 540,
       //                  AV_CODEC_ID_RAWVIDEO, AV_PIX_FMT_RGB32, AV_PIX_FMT_YUV420P, 400000, 30, v1.getFormatContext());
 
+}
+
+void MainWindow::on_base_merge_load_clicked()
+{
+    QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
+                 // tr("Videos (*.avi *.mpg *.mov)"));
+
+    if (file != NULL)
+        base.LoadVideo(file.toStdString());
 }
