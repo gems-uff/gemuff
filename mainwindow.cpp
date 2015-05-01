@@ -42,8 +42,12 @@ void MainWindow::on_pushButton_clicked()
     // setar o slider
     ui->slider->setMinimum(0);
 
+    //v1.LoadVideo("/Users/josericardo/Projects/Support Data/Videos/v1/frames/v1.avi");
+    //v2.LoadVideo("/Users/josericardo/Projects/Support Data/Videos/v2_mod/frames/v2_mod.avi");
+
     // Processar a diferenca
-    diff2Info = GEMUFF::Diff::Diff2(&v1, &v2, 0.3f);
+    diff2Info = GEMUFF::Diff::Diff2(&v1, &v2, ui->spinSimilarity->value() / 100.0);
+    diffPlayer.Clear();
     diffPlayer.SetVideo(&v1);
     diffPlayer.SetData(&diff2Info);
     diffPlayer.SetBufferSize(5);
@@ -281,7 +285,7 @@ void MainWindow::on_btnProcessMerge_clicked()
 {
    ui->merge_slider->setMinimum(0);
 
-    diff3Info = GEMUFF::Diff::Diff3(&base, &v1, &v2, 0.3);
+    diff3Info = GEMUFF::Diff::Diff3(&base, &v1, &v2, 0.2f);
     mergePlayer.SetDisplays(ui->lblBaseMerge, ui->lblV1Merge, ui->lblV2Merge, ui->lblResultMerge);
     mergePlayer.SetBase(&base);
     mergePlayer.SetData(&diff3Info);

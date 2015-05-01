@@ -25,7 +25,6 @@ namespace GEMUFF {
             std::vector<Hash::AbstractHashPtr> _sim1, _sim2;
             int current_idx = seq_1_offset;
 
-
             for (int k = 0; k < seq1_count; k++){
                 VIMUFF::ImagePtr _img = VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset+k]);
                 Hash::AbstractHashPtr _h1(Hash::DCTHash::GenerateHash(_img));
@@ -44,28 +43,29 @@ namespace GEMUFF {
 
 
             if (_simLCS.size() == 0){
-                int size_subseq1 = seq1_count - seq_1_offset;
-                int size_subseq2 = seq2_count - seq_2_offset;
 
-                for (int j = 0; j < size_subseq1; j++){
+                for (int j = 0; j < seq1_count; j++){
                     // Removed
                    AddChunk(diffChunks, VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset++]),
                            VIMUFF::ImagePtr(), DO_Remove, current_idx);
                 }
 
-                for (int j = 0; j < size_subseq2; j++){
+                for (int j = 0; j < seq2_count; j++){
                     // Added
                    AddChunk(diffChunks, VIMUFF::ImagePtr(),
                             VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset++]), DO_Add, current_idx);
                 }
             } else {
 
+                int l1_added = 0;
+                int l2_added = 0;
+
                 for (int k = 0; k < _simLCS.size(); k++){
                     Hash::AbstractHashPtr _or1 = _simLCS[k].l1_ref->getData();
                     Hash::AbstractHashPtr _or2 = _simLCS[k].l2_ref->getData();
 
-                    int _seq1_lcs_sim = FindKey(_or1, _seq1, seq_1_offset, threshold);
-                    int _seq2_lcs_sim = FindKey(_or2, _seq2, seq_2_offset, threshold);
+                    int _seq1_lcs_sim = FindKey(_or1, _seq1, seq_1_offset, 1.0f);
+                    int _seq2_lcs_sim = FindKey(_or2, _seq2, seq_2_offset, 1.0f);
 
                     int size_subseq1_sim = _seq1_lcs_sim - seq_1_offset;
                     int size_subseq2_sim = _seq2_lcs_sim - seq_2_offset;
@@ -74,11 +74,14 @@ namespace GEMUFF {
                         // Removed
                        AddChunk(diffChunks, VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset++]),
                                VIMUFF::ImagePtr(), DO_Remove, current_idx);
+                       l1_added++;
                     }
 
+
                     for (int j = 0; j < size_subseq2_sim; j++){
-                       AddChunk(diffChunks, VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset++]),
-                                VIMUFF::ImagePtr(), DO_Add, current_idx);
+                       AddChunk(diffChunks, VIMUFF::ImagePtr(),
+                                VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset++]), DO_Add, current_idx);
+                       l2_added++;
                     }
 
 
@@ -91,9 +94,24 @@ namespace GEMUFF {
                     AddChunk(diffChunks, VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset]),
                              VIMUFF::ImageRegister::toImage(&_diff), DO_Change, current_idx);
 
+                    l1_added++;
+                    l2_added++;
+
                     seq_1_offset++;
                     seq_2_offset++;
-                    current_idx = seq_1_offset;
+                    //current_idx = seq_1_offset;
+                }
+
+                for (int j = 0; j < seq1_count - l1_added; j++){
+                    // Removed
+                   AddChunk(diffChunks, VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset++]),
+                           VIMUFF::ImagePtr(), DO_Remove, current_idx);
+                }
+
+                for (int j = 0; j < seq2_count - l2_added; j++){
+                    // Added
+                   AddChunk(diffChunks, VIMUFF::ImagePtr(),
+                            VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset++]), DO_Add, current_idx);
                 }
             }
         }
@@ -242,12 +260,13 @@ namespace GEMUFF {
 
 
                 if (_lcsKey != NULL){
-                    int _seq1_lcs = FindKey(_lcsKey->l1_ref, _seq1, seq1_current_index, threshold);
-                    int _seq2_lcs = FindKey(_lcsKey->l2_ref, _seq2, seq2_current_index, threshold);
+                    int _seq1_lcs = FindKey(_lcsKey->l1_ref, _seq1, seq1_current_index, 1.0f);
+                    int _seq2_lcs = FindKey(_lcsKey->l2_ref, _seq2, seq2_current_index, 1.0f);
 
                     int _seq1_nframes = _seq1_lcs - seq1_current_index;
                     int _seq2_nframes = _seq2_lcs - seq2_current_index;
 
+                    qDebug() << "Seq1_nFrames: " << _seq1_nframes << "Seq2_nFrames: " << _seq2_nframes;
 
                     // Check for similarity if both lists are fullfiled
                     if (_seq1_nframes > 0 && _seq2_nframes > 0){
@@ -271,17 +290,17 @@ namespace GEMUFF {
 
                     seq1_current_index++;
                     seq2_current_index++;
-                    current_idx = seq2_current_index;
+                    current_idx = seq1_current_index;
                 } else {
 
-                    int _seq1_nframes = _seq1.size() - seq1_current_index;
-                    int _seq2_nframes = _seq2.size() - seq2_current_index;
+                    int _seq1_nframes = _seq1.size() - seq1_current_index - 1;
+                    int _seq2_nframes = _seq2.size() - seq2_current_index - 1;
 
                     // Check for similarity if both lists are fullfiled
                     if (_seq1_nframes > 0 && _seq2_nframes > 0){
 
                         CheckSimilarity(_seq1, _seq2, seq1_current_index, seq2_current_index,
-                                        _seq1.size(), _seq2.size(), threshold, _diffChunks);
+                                        _seq1_nframes, _seq2_nframes, threshold, _diffChunks);
 
                     } else if (_seq1_nframes > 0){
 

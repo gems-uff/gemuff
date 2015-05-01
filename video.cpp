@@ -38,7 +38,7 @@ namespace GEMUFF
             }
 
             // Recuperar informacao do stream
-            if (av_find_stream_info(fmt_ctx) < 0){
+            if (avformat_find_stream_info(fmt_ctx, NULL) < 0){
                 fprintf(stderr, "No stream info!: %s\n", filename.c_str());
                 return -1; // Sem informacao
             }

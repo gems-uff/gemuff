@@ -83,7 +83,7 @@ namespace GEMUFF {
             x = (x + (x >> 4)) & m4;
 
             //qDebug() << "h1: " << toString().c_str() << " h2: " << hash->toString().c_str() << " s: " << (((x * h01)>>56)/64.0);
-            return 1.0 - (((x * h01)>>56)/64.0);
+            return 1.0f - (((x * h01)>>56)/64.0);
         }
 
         int DCTHash::BitCount8(long64 val){

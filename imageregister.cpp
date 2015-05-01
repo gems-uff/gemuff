@@ -40,6 +40,9 @@ namespace GEMUFF
             if (m_Frames.find(_hash->toString()) != m_Frames.end())
                 res = ImageRegister::m_Frames[_hash->toString()].image;
 
+            if (res.get() == NULL)
+                qDebug() << "Hash code " << _hash->toString().c_str() << " returned null";
+
             return res;
         }
 

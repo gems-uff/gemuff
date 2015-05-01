@@ -6,12 +6,23 @@ namespace GEMUFF {
         Diff2Player::Diff2Player(){
             numChannels = 2;
             currentIndex = 0;
+            video_1 = video_2 = video_diff = NULL;
         }
 
         void Diff2Player::SetDisplays(QLabel *_v1, QLabel *_v2, QLabel *_diff){
             video_1 = _v1;
             video_2 = _v2;
             video_diff = _diff;
+        }
+
+        void Diff2Player::Clear(){
+            if (video_1 != NULL) video_1->clear();
+            if (video_2 != NULL) video_2->clear();
+            if (video_diff != NULL) video_diff->clear();
+
+            mFrames.clear();
+
+            currentIndex = 0;
         }
 
 
@@ -35,6 +46,8 @@ namespace GEMUFF {
 
             while (current_index < _v1Hash.size()){
 
+                int cur_offset = 0;
+
                 while (current_chunk_idx < diff2->diffChunks.size()){
                     Diff::DiffChunk _chunk = diff2->diffChunks[current_chunk_idx];
 
@@ -47,14 +60,15 @@ namespace GEMUFF {
                         frame.v1 = _chunk.diffData.v1_Image;
                         frame.v2 = _chunk.diffData.v2_Image;
                         mFrames.push_back(frame);
-                        current_index++;
-                        current_chunk_idx++;
-                        continue;
+                        cur_offset++;
+                        //current_chunk_idx++;
+                        //continue;
                     } else if (_chunk.diffData.op == Diff::DO_Remove){
                         DiffFramePlayer frame;
                         frame.op = _chunk.diffData.op;
                         frame.v1 = _chunk.diffData.v1_Image;
                         mFrames.push_back(frame);
+                        cur_offset++;
                      } else if (_chunk.diffData.op == Diff::DO_Add){
                         DiffFramePlayer frame;
                         frame.op = _chunk.diffData.op;
@@ -64,6 +78,8 @@ namespace GEMUFF {
 
                     current_chunk_idx++;
                 }
+
+                current_index += cur_offset;
 
                 if (current_index < _v1Hash.size()){
 
@@ -111,7 +127,7 @@ namespace GEMUFF {
                 current_chunk_idx++;
             }
 
-            qDebug() << "Frames: " << mFrames.size();
+            //qDebug() << "Frames: " << mFrames.size();
         }
 
 

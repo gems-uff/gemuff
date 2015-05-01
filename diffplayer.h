@@ -24,6 +24,7 @@ namespace GEMUFF{
         {
         public:
             Diff2Player();
+            void Clear();
             void SetDisplays(QLabel* _v1, QLabel* _v2, QLabel* _diff);
             void SetData(Diff::Diff2Info *_diff2);
             void SetVideo(Video *_v1){ video1 = _v1; }

@@ -11,7 +11,6 @@ namespace GEMUFF {
         }
 
         void VideoPlayer::setTimer(int time){
-            qDebug() << time;
             currentIndex = time;
 
 
