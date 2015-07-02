@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include <ui_mainwindow.h>
 //#include "videoprocessing.h"
+#include "GEMUFF.h"
 
 /*IplImage* QImage2IplImage(QImage *qimg)
 {
@@ -46,6 +47,12 @@ void MainWindow::on_pushButton_clicked()
     //v2.LoadVideo("/Users/josericardo/Projects/Support Data/Videos/v2_mod/frames/v2_mod.avi");
 
     // Processar a diferenca
+#ifdef VIMUFF_GPU
+    qDebug() << "Processing in GPU";
+#else
+    qDebug() << "Processing in CPU";
+#endif
+
     diff2Info = GEMUFF::Diff::Diff2(&v1, &v2, ui->spinSimilarity->value() / 100.0);
     diffPlayer.Clear();
     diffPlayer.SetVideo(&v1);
@@ -195,18 +202,20 @@ void MainWindow::on_slider_valueChanged(int value)
 {
     //diffPlayer.BufferAtTime(value, img);
     //ui->av1->setPixmap(QPixmap::fromImage(img));
-    qDebug() << value;
+    //qDebug() << value;
     diffPlayer.SetTime(value);
 
 }
 
 void MainWindow::on_v1_diff_load_clicked()
 {
-    QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
-                 // tr("Videos (*.avi *.mpg *.mov)"));
+    QString file = QFileDialog::getOpenFileName(this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
+                  tr("Videos (*.avi *.mpg *.mov)"));
 
-    if (file != NULL)
+    if (file != NULL){
+        qDebug() << "Loading Video " << file.toStdString().c_str();
         v1.LoadVideo(file.toStdString());
+    }
 
     /*std::vector<std::string>& seq_hash = v1.getSequenceHash();
 
@@ -222,11 +231,13 @@ void MainWindow::on_v1_diff_load_clicked()
 
 void MainWindow::on_v2_diff_load_clicked()
 {
-    QString file = QFileDialog::getOpenFileName(this);//, "Video", tr("Videos (*.avi *.mpg *.mov)"),
-                  //tr("Videos (*.avi *.mpg *.mov)"));
+    QString file = QFileDialog::getOpenFileName(this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
+                  tr("Videos (*.avi *.mpg *.mov)"));
 
-    if (file != NULL)
+    if (file != NULL){
+        qDebug() << "Loading Video " << file.toStdString().c_str();
         v2.LoadVideo(file.toStdString());
+    }
 
     // Carregar primeiro frame do video
     /*if (v2.getSequenceHash().size() > 0)
@@ -245,6 +256,10 @@ void MainWindow::on_delta_save_clicked()
 
     if (file != NULL)
     {
+#ifdef VIMUFF_INFO
+            QTime time;
+            time.restart();
+#endif
         std::ofstream _diffFile;
 
         _diffFile.open(file.toStdString().c_str(),
@@ -252,6 +267,10 @@ void MainWindow::on_delta_save_clicked()
         diff2Info.write(_diffFile);
 
         _diffFile.close();
+
+#ifdef VIMUFF_INFO
+            qDebug() << "Processing and saving time (ms): " << time.elapsed();
+#endif
     }
 }
 

@@ -9,6 +9,9 @@ typedef unsigned long long ulong64;
 typedef signed long long long64;
 #endif
 
+#define VIMUFF_INFO
+#undef VIMUFF_GPU
+
 namespace GEMUFF {
     namespace VIMUFF {
         class Definitions {

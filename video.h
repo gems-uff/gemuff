@@ -16,6 +16,7 @@ extern "C" {
 #include <QDebug>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
+#include "GEMUFF.h"
 
 namespace GEMUFF
 {

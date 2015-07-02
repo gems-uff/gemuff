@@ -69,7 +69,7 @@ namespace GEMUFF {
                     if (_chunk.diffData.op == Diff::DO_Change){
                         DiffFramePlayer frame;
                         frame.op = _chunk.diffData.op;
-                        frame.v1 = _chunk.diffData.v1_Image;
+                        frame.v1 = ImageRegister::ImageAt(_chunk.diffData.v1_HashPtr);
                         frame.v2 = _chunk.diffData.v2_Image;
                         mFrames.push_back(frame);
                         current_index++;
@@ -78,7 +78,7 @@ namespace GEMUFF {
                     } else if (_chunk.diffData.op == Diff::DO_Remove){
                         DiffFramePlayer frame;
                         frame.op = _chunk.diffData.op;
-                        frame.v1 = _chunk.diffData.v1_Image;
+                        frame.v1 = ImageRegister::ImageAt(_chunk.diffData.v1_HashPtr);
                         mFrames.push_back(frame);
                      } else if (_chunk.diffData.op == Diff::DO_Add){
                         DiffFramePlayer frame;
@@ -110,7 +110,7 @@ namespace GEMUFF {
                 if (_chunk.diffData.op == Diff::DO_Change){
                     DiffFramePlayer frame;
                     frame.op = _chunk.diffData.op;
-                    frame.v1 = _chunk.diffData.v1_Image;
+                    frame.v1 = ImageRegister::ImageAt(_chunk.diffData.v1_HashPtr);
                     frame.v2 = _chunk.diffData.v2_Image;
                     mFrames.push_back(frame);
                     current_index++;
@@ -119,7 +119,7 @@ namespace GEMUFF {
                 } else if (_chunk.diffData.op == Diff::DO_Remove){
                     DiffFramePlayer frame;
                     frame.op = _chunk.diffData.op;
-                    frame.v1 = _chunk.diffData.v1_Image;
+                    frame.v1 = ImageRegister::ImageAt(_chunk.diffData.v1_HashPtr);
                     mFrames.push_back(frame);
                  } else if (_chunk.diffData.op == Diff::DO_Add){
                     DiffFramePlayer frame;
@@ -202,7 +202,12 @@ namespace GEMUFF {
 
                     QImage img1 = mFrames[currentIndex+i].v1->toQImage();
                     QImage diff = mFrames[currentIndex+i].v2->toQImage();
+
+#ifdef VIMUFF_GPU
                     QImage img2 = ImageRegister::ProcessGPUDiff(&img1, &diff);
+#else
+                    QImage img2 = ImageRegister::ProcessCPUDiff(&img1, &diff);
+#endif
 
                     pen.setColor(Qt::yellow);
                     painter.setPen(pen);
@@ -232,6 +237,7 @@ namespace GEMUFF {
                 }
 
                 if (mFrames[currentIndex+i].op == Diff::DO_Add){
+
                     pen.setColor(Qt::green);
                     painter2.setPen(pen);
                     painter2.drawRect(rect);

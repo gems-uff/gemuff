@@ -6,6 +6,7 @@
 #include "player.h"
 #include "imageregister.h"
 #include "diffalgorithms.h"
+#include "GEMUFF.h"
 
 
 namespace GEMUFF{

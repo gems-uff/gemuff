@@ -87,11 +87,11 @@ namespace GEMUFF{
 
             cv::equalizeHist(image_data, result->image_data);
 
-            static bool kd = false;
+            /*static bool kd = false;
             if (kd == false){
                 kd = true;
                 cv::imwrite("/Users/josericardo/img_equalized.jpg", result->image_data);
-            }
+            }*/
 
             return result;
         }
@@ -101,11 +101,11 @@ namespace GEMUFF{
 
             cv::dct(image_data, result->image_data);
 
-            static bool kd = false;
+           /* static bool kd = false;
             if (kd == false){
                 kd = true;
                 cv::imwrite("/Users/josericardo/img_dct.jpg", result->image_data);
-            }
+            }*/
 
             return result;
         }
@@ -132,7 +132,7 @@ namespace GEMUFF{
 
            // temp.convertTo(result->image_data, CV_32FC1);
 
-            static bool kd = false;
+            /*static bool kd = false;
             if (kd == false){
                 kd = true;
                 cv::imwrite("/Users/josericardo/img_kernel.jpg", result->image_data);
@@ -144,7 +144,7 @@ namespace GEMUFF{
                      //   }
                     //}
 
-            }
+            }*/
 
 
 

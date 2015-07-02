@@ -33,7 +33,9 @@ namespace GEMUFF
             static Hash::AbstractHashPtr RegisterFrame(VIMUFF::ImagePtr image);
             static VIMUFF::ImagePtr ImageAt(Hash::AbstractHashPtr _hash);
             static QImage ProcessGPUDiff(QImage* img1, QImage* img2);
+            static QImage ProcessCPUDiff(QImage* img1, QImage* img2);
             static QImage ProcessGPUPatch(QImage* img1, QImage* img2);
+            static QImage ProcessCPUPatch(QImage* img1, QImage* img2);
             static void Debug();
             static ImagePtr toImage(QImage *im);
 

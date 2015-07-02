@@ -63,7 +63,25 @@ namespace GEMUFF
 
             free(delta);
             return img_c;
+        }
 
+        QImage ImageRegister::ProcessCPUDiff(QImage* img1, QImage* img2){
+            // Processar a diferenca
+            uchar* delta = (uchar*) malloc(sizeof(uchar) * img1->width() * img1->height() * 4);
+            const uchar* img1Data = img1->constBits();
+            const uchar* img2Data = img2->constBits();
+
+            for (int i = 0; i < img1->width() * img1->height(); i++){
+                delta[i*4] = img1Data[i*4] ^ img2Data[i*4];
+                delta[i*4+1] = img1Data[i*4+1] ^ img2Data[i*4+1];
+                delta[i*4+2] = img1Data[i*4+2] ^ img2Data[i*4+2];
+                delta[i*4+3] = 0;
+            }
+
+            QImage img_c =  QImage(delta, img1->width(), img1->height(), QImage::Format_RGB32);
+
+            free(delta);
+            return img_c;
         }
 
         QImage ImageRegister::ProcessGPUPatch(QImage* img1, QImage* img2){
@@ -71,6 +89,27 @@ namespace GEMUFF
             // Processar a diferenca
             uchar* patched = (uchar*) malloc(sizeof(uchar) * img1->width() * img1->height() * 4);
             gIMUFFPatch(img1->constBits(), img2->constBits(), patched, img1->width() * img1->height());
+            QImage img_c =  QImage(patched, img1->width(), img1->height(), QImage::Format_RGB32);
+
+            free(patched);
+            return img_c;
+
+        }
+
+        QImage ImageRegister::ProcessCPUPatch(QImage* img1, QImage* img2){
+
+            // Processar a diferenca
+            uchar* patched = (uchar*) malloc(sizeof(uchar) * img1->width() * img1->height() * 4);
+            const uchar* img1Data = img1->constBits();
+            const uchar* img2Data = img2->constBits();
+
+            for (int i = 0; i < img1->width() * img1->height(); i++){
+                patched[i*4] = img1Data[i*4] ^ img2Data[i*4];
+                patched[i*4+1] = img1Data[i*4+1] ^ img2Data[i*4+1];
+                patched[i*4+2] = img1Data[i*4+2] ^ img2Data[i*4+2];
+                patched[i*4+3] = 0;
+            }
+
             QImage img_c =  QImage(patched, img1->width(), img1->height(), QImage::Format_RGB32);
 
             free(patched);

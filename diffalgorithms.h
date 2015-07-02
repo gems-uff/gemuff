@@ -5,6 +5,7 @@
 #include <string>
 #include "helperfunctions.h"
 #include "video.h"
+#include "GEMUFF.h"
 
 namespace GEMUFF {
     namespace Diff {
@@ -33,6 +34,8 @@ namespace GEMUFF {
             DiffOperation op;
             VIMUFF::ImagePtr v1_Image;
             VIMUFF::ImagePtr v2_Image;
+            Hash::MD5HashPtr v1_HashPtr;
+            Hash::MD5HashPtr v2_HashPtr;
         };
 
         struct DiffChunk {
@@ -82,6 +85,7 @@ namespace GEMUFF {
                         img1_height = _chunk.diffData.v1_Image->getHeight();
                     }
 
+
                     if (_chunk.diffData.v2_Image){
                         img2 = _chunk.diffData.v2_Image->data();
                         img2_width = _chunk.diffData.v2_Image->getWidth();
@@ -96,6 +100,21 @@ namespace GEMUFF {
                     _ofstream.write((char*)&img2_height, sizeof(int));
                     _ofstream.write((char*)img2, sizeof(unsigned char) *
                                     img2_width * img2_height * 4);
+
+                    bool v1HasHash = false;
+                    bool v2HasHash = false;
+                    if (_chunk.diffData.v1_HashPtr != NULL) v1HasHash = true;
+                    if (_chunk.diffData.v2_HashPtr != NULL) v2HasHash = true;
+
+
+                    _ofstream.write((char*)&v1HasHash, sizeof(bool));
+                    _ofstream.write((char*)&v2HasHash, sizeof(bool));
+
+                    if (v1HasHash)
+                        _ofstream.write((char*)_chunk.diffData.v1_HashPtr.get(), sizeof(Hash::MD5Hash));
+
+                    if (v2HasHash)
+                    _ofstream.write((char*)_chunk.diffData.v2_HashPtr.get(), sizeof(Hash::MD5Hash));
 
                 }
             }
@@ -154,6 +173,22 @@ namespace GEMUFF {
                         free(img2);
                     }
 
+                    bool v1HasHash, v2HasHash;
+                    _ifstream.read((char*)&v1HasHash, sizeof(bool));
+                    _ifstream.read((char*)&v2HasHash, sizeof(bool));
+
+                    if (v1HasHash){
+                        Hash::MD5Hash *v1 = new Hash::MD5Hash;
+                        _ifstream.read((char*)v1, sizeof(Hash::MD5Hash));
+                        _c.diffData.v1_HashPtr.reset(v1);
+                    }
+
+                    if (v2HasHash){
+                        Hash::MD5Hash *v2 = new Hash::MD5Hash;
+                        _ifstream.read((char*)v2, sizeof(Hash::MD5Hash));
+                        _c.diffData.v2_HashPtr.reset(v2);
+                    }
+
                     diffChunks.push_back(_c);
                 }
             }
@@ -190,7 +225,8 @@ namespace GEMUFF {
                           float threshold);
 
         void AddChunk(std::vector<DiffChunk> &_diffChunks, VIMUFF::ImagePtr _img1,
-                      VIMUFF::ImagePtr _img2, DiffOperation _op, int _index);
+                      Hash::MD5HashPtr hash_v1, VIMUFF::ImagePtr _img2, Hash::MD5HashPtr hash_v2,
+                      DiffOperation _op, int _index);
 
         int FindKey(Hash::AbstractHashPtr _key, VECTOR_ABSTRACT_HASH_PTR seq, int startIndex, float threshold);
     }

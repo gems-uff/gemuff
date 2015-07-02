@@ -46,14 +46,17 @@ namespace GEMUFF {
 
                 for (int j = 0; j < seq1_count; j++){
                     // Removed
-                   AddChunk(diffChunks, VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset++]),
-                           VIMUFF::ImagePtr(), DO_Remove, current_idx);
+                   AddChunk(diffChunks, VIMUFF::ImagePtr(), boost::static_pointer_cast<Hash::MD5Hash>(_seq1[seq_1_offset]),
+                           VIMUFF::ImagePtr(), Hash::MD5HashPtr(), DO_Remove, current_idx);
+                   seq_1_offset++;
                 }
 
                 for (int j = 0; j < seq2_count; j++){
                     // Added
-                   AddChunk(diffChunks, VIMUFF::ImagePtr(),
-                            VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset++]), DO_Add, current_idx);
+                   AddChunk(diffChunks, VIMUFF::ImagePtr(), Hash::MD5HashPtr(),
+                            VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset]), Hash::MD5HashPtr(),
+                           DO_Add, current_idx);
+                   seq_2_offset++;
                 }
             } else {
 
@@ -72,16 +75,19 @@ namespace GEMUFF {
 
                     for (int j = 0; j < size_subseq1_sim; j++){
                         // Removed
-                       AddChunk(diffChunks, VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset++]),
-                               VIMUFF::ImagePtr(), DO_Remove, current_idx);
+                       AddChunk(diffChunks, VIMUFF::ImagePtr(), boost::static_pointer_cast<Hash::MD5Hash>(_seq1[seq_1_offset]),
+                                VIMUFF::ImagePtr(), Hash::MD5HashPtr(), DO_Remove, current_idx);
                        l1_added++;
+                       seq_1_offset++;
                     }
 
 
                     for (int j = 0; j < size_subseq2_sim; j++){
-                       AddChunk(diffChunks, VIMUFF::ImagePtr(),
-                                VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset++]), DO_Add, current_idx);
+                       AddChunk(diffChunks, VIMUFF::ImagePtr(), Hash::MD5HashPtr(),
+                                VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset]), Hash::MD5HashPtr(),
+                               DO_Add, current_idx);
                        l2_added++;
+                       seq_2_offset++;
                     }
 
 
@@ -89,29 +95,35 @@ namespace GEMUFF {
                     QImage _im1 = VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset])->toQImage();
                     QImage _im2 = VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset])->toQImage();
 
+#ifdef VIMUFF_GPU
                     QImage _diff = VIMUFF::ImageRegister::ProcessGPUDiff(&_im1, &_im2);
+#else
+                    QImage _diff = VIMUFF::ImageRegister::ProcessCPUDiff(&_im1, &_im2);
+#endif
 
-                    AddChunk(diffChunks, VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset]),
-                             VIMUFF::ImageRegister::toImage(&_diff), DO_Change, current_idx);
+                    AddChunk(diffChunks, VIMUFF::ImagePtr(), boost::static_pointer_cast<Hash::MD5Hash>(_seq1[seq_1_offset]),
+                             VIMUFF::ImageRegister::toImage(&_diff), Hash::MD5HashPtr(), DO_Change, current_idx);
 
                     l1_added++;
                     l2_added++;
 
                     seq_1_offset++;
                     seq_2_offset++;
-                    //current_idx = seq_1_offset;
                 }
 
                 for (int j = 0; j < seq1_count - l1_added; j++){
                     // Removed
-                   AddChunk(diffChunks, VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset++]),
-                           VIMUFF::ImagePtr(), DO_Remove, current_idx);
+                   AddChunk(diffChunks, VIMUFF::ImagePtr(), boost::static_pointer_cast<Hash::MD5Hash>(_seq1[seq_1_offset]),
+                            VIMUFF::ImagePtr(), Hash::MD5HashPtr(), DO_Remove, current_idx);
+                   seq_1_offset++;
                 }
 
                 for (int j = 0; j < seq2_count - l2_added; j++){
                     // Added
-                   AddChunk(diffChunks, VIMUFF::ImagePtr(),
-                            VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset++]), DO_Add, current_idx);
+                   AddChunk(diffChunks, VIMUFF::ImagePtr(), Hash::MD5HashPtr(),
+                            VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset]), Hash::MD5HashPtr(),
+                           DO_Add, current_idx);
+                   seq_2_offset++;
                 }
             }
         }
@@ -122,6 +134,9 @@ namespace GEMUFF {
              //v1->Debug("/Users/josericardo/v1");
              //v2->Debug("/Users/josericardo/v2");
 
+#ifdef VIMUFF_INFO
+            qDebug() << "Processing diff2...";
+#endif
             std::vector<Hash::AbstractHashPtr> _seq1 = v1->getSequenceHash();
             std::vector<Hash::AbstractHashPtr> _seq2 = v2->getSequenceHash();
 
@@ -131,9 +146,22 @@ namespace GEMUFF {
             diff2Info.base_width = v1->getFrameWidth();
             diff2Info.base_height = v2->getFrameHeight();
 
+#ifdef VIMUFF_INFO
+            QTime time;
+            time.restart();
+#endif
             std::vector<LCSEntry> _lcs = Helper::LCS(_seq1, _seq2, threshold);
+#ifdef VIMUFF_INFO
+           qDebug() << "LCS Calculation time (ms): " << time.elapsed();
+           time.restart();
+#endif
 
             Process2Diff(_lcs, diff2Info.diffChunks, _seq1, _seq2, threshold);
+
+#ifdef VIMUFF_INFO
+           qDebug() << "Diff2 Calculation time (ms): " << time.elapsed();
+           time.restart();
+#endif
 
             return diff2Info;
         }
@@ -187,8 +215,18 @@ namespace GEMUFF {
                     DiffData diffData;
 
                     diffData.op = bv1_chunks[idx_v1].diffData.op;
-                    diffData.v1_Image = bv1_chunks[idx_v1].diffData.v1_Image;
-                    diffData.v2_Image = bv1_chunks[idx_v1].diffData.v2_Image;
+
+                    if (diffData.op == DO_Add){
+                        diffData.v2_Image = bv1_chunks[idx_v1].diffData.v2_Image;
+                    } else if (diffData.op == DO_Remove){
+                        diffData.v1_Image = VIMUFF::ImageRegister::ImageAt(bv1_chunks[idx_v1].diffData.v1_HashPtr);
+                    } else if (diffData.op == DO_Change){
+                        diffData.v1_Image = VIMUFF::ImageRegister::ImageAt(bv1_chunks[idx_v1].diffData.v1_HashPtr);
+                        diffData.v2_Image = bv1_chunks[idx_v1].diffData.v2_Image;
+                    } else {
+                        diffData.v1_Image = bv1_chunks[idx_v1].diffData.v1_Image;
+                        diffData.v2_Image = bv1_chunks[idx_v1].diffData.v2_Image;
+                    }
                     chunk.basev1.push_back(diffData);
                     idx_v1++;
                 }
@@ -196,10 +234,22 @@ namespace GEMUFF {
 
                 while (idx_v2 < bv2_chunks.size() && bv2_chunks[idx_v2].index == idx){
                     DiffData diffData;
-                    DiffOperation op = bv2_chunks[idx_v2].diffData.op;
+
                     diffData.op = bv2_chunks[idx_v2].diffData.op;
-                    diffData.v1_Image = bv2_chunks[idx_v2].diffData.v1_Image;
-                    diffData.v2_Image = bv2_chunks[idx_v2].diffData.v2_Image;
+
+                    if (diffData.op == DO_Add){
+                        diffData.v2_Image = bv2_chunks[idx_v2].diffData.v2_Image;
+                    } else if (diffData.op == DO_Remove){
+                        diffData.v1_Image = VIMUFF::ImageRegister::ImageAt(bv2_chunks[idx_v2].diffData.v1_HashPtr);
+                    } else if (diffData.op == DO_Change){
+                        diffData.v1_Image = VIMUFF::ImageRegister::ImageAt(bv2_chunks[idx_v2].diffData.v1_HashPtr);
+                        diffData.v2_Image = bv2_chunks[idx_v2].diffData.v2_Image;
+                    } else {
+                        diffData.v1_Image = bv2_chunks[idx_v2].diffData.v1_Image;
+                        diffData.v2_Image = bv2_chunks[idx_v2].diffData.v2_Image;
+                    }
+
+
                     chunk.basev2.push_back(diffData);
                     idx_v2++;
                 }
@@ -219,8 +269,19 @@ namespace GEMUFF {
                 while (idx_v1 < bv1_chunks.size()){
                     DiffData diffData;
                     diffData.op = bv1_chunks[idx_v1].diffData.op;
-                    diffData.v1_Image = bv1_chunks[idx_v1].diffData.v1_Image;
-                    diffData.v2_Image = bv1_chunks[idx_v1].diffData.v2_Image;
+
+                    if (diffData.op == DO_Add){
+                        diffData.v2_Image = bv1_chunks[idx_v1].diffData.v2_Image;
+                    } else if (diffData.op == DO_Remove){
+                        diffData.v1_Image = VIMUFF::ImageRegister::ImageAt(bv1_chunks[idx_v1].diffData.v1_HashPtr);
+                    } else if (diffData.op == DO_Change){
+                        diffData.v1_Image = VIMUFF::ImageRegister::ImageAt(bv1_chunks[idx_v1].diffData.v1_HashPtr);
+                        diffData.v2_Image = bv1_chunks[idx_v1].diffData.v2_Image;
+                    } else {
+                        diffData.v1_Image = bv1_chunks[idx_v1].diffData.v1_Image;
+                        diffData.v2_Image = bv1_chunks[idx_v1].diffData.v2_Image;
+                    }
+
                     chunk.basev1.push_back(diffData);
                     idx_v1++;
                 }
@@ -229,8 +290,19 @@ namespace GEMUFF {
                 while (idx_v2 < bv2_chunks.size()){
                     DiffData diffData;
                     diffData.op = bv2_chunks[idx_v2].diffData.op;
-                    diffData.v1_Image = bv2_chunks[idx_v2].diffData.v1_Image;
-                    diffData.v2_Image = bv2_chunks[idx_v2].diffData.v2_Image;
+
+                    if (diffData.op == DO_Add){
+                        diffData.v2_Image = bv2_chunks[idx_v2].diffData.v2_Image;
+                    } else if (diffData.op == DO_Remove){
+                        diffData.v1_Image = VIMUFF::ImageRegister::ImageAt(bv2_chunks[idx_v2].diffData.v1_HashPtr);
+                    } else if (diffData.op == DO_Change){
+                        diffData.v1_Image = VIMUFF::ImageRegister::ImageAt(bv2_chunks[idx_v2].diffData.v1_HashPtr);
+                        diffData.v2_Image = bv2_chunks[idx_v2].diffData.v2_Image;
+                    } else {
+                        diffData.v1_Image = bv2_chunks[idx_v2].diffData.v1_Image;
+                        diffData.v2_Image = bv2_chunks[idx_v2].diffData.v2_Image;
+                    }
+
                     chunk.basev2.push_back(diffData);
                     idx_v2++;
                 }
@@ -266,7 +338,7 @@ namespace GEMUFF {
                     int _seq1_nframes = _seq1_lcs - seq1_current_index;
                     int _seq2_nframes = _seq2_lcs - seq2_current_index;
 
-                    qDebug() << "Seq1_nFrames: " << _seq1_nframes << "Seq2_nFrames: " << _seq2_nframes;
+                    //qDebug() << "Seq1_nFrames: " << _seq1_nframes << "Seq2_nFrames: " << _seq2_nframes;
 
                     // Check for similarity if both lists are fullfiled
                     if (_seq1_nframes > 0 && _seq2_nframes > 0){
@@ -278,12 +350,13 @@ namespace GEMUFF {
                         for (; seq1_current_index < _seq1_lcs; seq1_current_index++){
 
                             // Removed
-                           AddChunk(_diffChunks, VIMUFF::ImageRegister::ImageAt(_seq1[seq1_current_index]),
-                                    VIMUFF::ImagePtr(), DO_Remove, current_idx);
+                           AddChunk(_diffChunks, VIMUFF::ImagePtr(), boost::static_pointer_cast<Hash::MD5Hash>(_seq1[seq1_current_index]),
+                                    VIMUFF::ImagePtr(), Hash::MD5HashPtr(), DO_Remove, current_idx);
                         }
                     } else if (_seq2_nframes > 0){
                         for (; seq2_current_index < _seq2_lcs; seq2_current_index++){
-                           AddChunk(_diffChunks, VIMUFF::ImagePtr(), VIMUFF::ImageRegister::ImageAt(_seq2[seq2_current_index]),
+                           AddChunk(_diffChunks, VIMUFF::ImagePtr(), Hash::MD5HashPtr(),
+                                    VIMUFF::ImageRegister::ImageAt(_seq2[seq2_current_index]), Hash::MD5HashPtr(),
                                     DO_Add, current_idx);
                         }
                     }
@@ -306,13 +379,13 @@ namespace GEMUFF {
 
                         for (; seq1_current_index < _seq1.size(); seq1_current_index++){
                             // Removed
-                           AddChunk(_diffChunks, VIMUFF::ImageRegister::ImageAt(_seq1[seq1_current_index]),
-                                    VIMUFF::ImagePtr(), DO_Remove, current_idx);
+                           AddChunk(_diffChunks, VIMUFF::ImagePtr(), boost::static_pointer_cast<Hash::MD5Hash>(_seq1[seq1_current_index]),
+                                    VIMUFF::ImagePtr(), Hash::MD5HashPtr(), DO_Remove, current_idx);
                         }
                     } else if (_seq2_nframes > 0){
                         for (; seq2_current_index < _seq2.size(); seq2_current_index++){
-                           AddChunk(_diffChunks, VIMUFF::ImagePtr(),
-                                    VIMUFF::ImageRegister::ImageAt(_seq2[seq2_current_index]),
+                           AddChunk(_diffChunks, VIMUFF::ImagePtr(), Hash::MD5HashPtr(),
+                                    VIMUFF::ImageRegister::ImageAt(_seq2[seq2_current_index]), Hash::MD5HashPtr(),
                                     DO_Add, current_idx);
                         }
                     }
@@ -328,20 +401,24 @@ namespace GEMUFF {
 
             // Process the remaining frames in seq2
             for (; seq2_current_index < _seq2.size(); seq2_current_index){
-                AddChunk(_diffChunks, VIMUFF::ImagePtr(),
-                         VIMUFF::ImageRegister::ImageAt(_seq2[seq2_current_index++]),
+                AddChunk(_diffChunks, VIMUFF::ImagePtr(), Hash::MD5HashPtr(),
+                         VIMUFF::ImageRegister::ImageAt(_seq2[seq2_current_index]), Hash::MD5HashPtr(),
                          DO_Add, _seq1.size());
+                seq2_current_index++;
             }
         }
 
         void AddChunk(std::vector<DiffChunk> &_diffChunks, VIMUFF::ImagePtr _img1,
-                      VIMUFF::ImagePtr _img2, DiffOperation _op, int _index){
+                      Hash::MD5HashPtr hash_v1, VIMUFF::ImagePtr _img2, Hash::MD5HashPtr hash_v2,
+                      DiffOperation _op, int _index){
             DiffChunk chunk;
             chunk.diffData.op = _op;
             chunk.index = _index;
 
             chunk.diffData.v1_Image = _img1;
             chunk.diffData.v2_Image = _img2;
+            chunk.diffData.v1_HashPtr = hash_v1;
+            chunk.diffData.v2_HashPtr = hash_v2;
             _diffChunks.push_back(chunk);
         }
 
@@ -364,10 +441,14 @@ namespace GEMUFF {
 
                     if (_chunk.diffData.op == Diff::DO_Change){
                         // Apply the difference into image
-                        QImage img1 = _chunk.diffData.v1_Image->toQImage();
+                        QImage img1 = VIMUFF::ImageRegister::ImageAt(_chunk.diffData.v1_HashPtr)->toQImage();
                         QImage diff = _chunk.diffData.v2_Image->toQImage();
-                        QImage img2 = GEMUFF::VIMUFF::ImageRegister::ProcessGPUPatch(&img1, &diff);
 
+#ifdef VIMUFF_GPU
+                        QImage img2 = GEMUFF::VIMUFF::ImageRegister::ProcessGPUPatch(&img1, &diff);
+#else
+                        QImage img2 = GEMUFF::VIMUFF::ImageRegister::ProcessCPUPatch(&img1, &diff);
+#endif
                         resultHash.push_back(GEMUFF::VIMUFF::ImageRegister::RegisterFrame(GEMUFF::VIMUFF::ImageRegister::toImage(&img2)));
                         current_index++;
                         current_chunk_idx++;
@@ -393,7 +474,12 @@ namespace GEMUFF {
                 if (_chunk.diffData.op == Diff::DO_Change){
                     QImage img1 = _chunk.diffData.v1_Image->toQImage();
                     QImage diff = _chunk.diffData.v2_Image->toQImage();
+
+#ifdef VIMUFF_GPU
                     QImage img2 = GEMUFF::VIMUFF::ImageRegister::ProcessGPUPatch(&img1, &diff);
+#else
+                    QImage img2 = GEMUFF::VIMUFF::ImageRegister::ProcessCPUPatch(&img1, &diff);
+#endif
 
                     resultHash.push_back(GEMUFF::VIMUFF::ImageRegister::RegisterFrame(GEMUFF::VIMUFF::ImageRegister::toImage(&img2)));
 

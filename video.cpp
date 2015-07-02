@@ -1,5 +1,6 @@
 #include "video.h"
 
+
 namespace GEMUFF
 {
     namespace VIMUFF
@@ -32,6 +33,9 @@ namespace GEMUFF
 
         int Video::LoadVideo(std::string filename)
         {
+#ifdef VIMUFF_INFO
+            qDebug() << "Opening file " << filename.c_str();
+#endif
             if (avformat_open_input(&fmt_ctx, filename.c_str(), NULL, NULL) != 0){
                 fprintf(stderr, "Error opening file: %s\n", filename.c_str());
                 return  -1;
@@ -44,7 +48,7 @@ namespace GEMUFF
             }
 
             // Dump information about the format
-            av_dump_format(fmt_ctx, 0, filename.c_str(), 0);
+            //av_dump_format(fmt_ctx, 0, filename.c_str(), 0);
 
             // Recuperar o stream de video
             ffmpeg_videostream = -1;
@@ -81,11 +85,16 @@ namespace GEMUFF
             }
 
             // Recuperar a tabela de hash de cada filme
+#ifdef VIMUFF_INFO
             QTime time;
             time.restart();
+#endif
             RetrieveHashTable(fmt_ctx, codec_context);
-            //qDebug() << "Calculo da tabela de hash(ms): " << time.elapsed();
-            //qDebug() << "Numero de Frames: " << frame_sequence_hash.size();*/
+
+#ifdef VIMUFF_INFO
+            qDebug() << "Hash Calculation time(ms): " << time.elapsed();
+            qDebug() << "Total Frames: " << frame_sequence_hash.size();
+#endif
 
             return 0;
         }

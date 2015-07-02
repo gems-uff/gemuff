@@ -125,6 +125,8 @@ namespace GEMUFF {
             MD5Hash() : AbstractHash(T_MD5) {
             }
 
+            ~MD5Hash() {}
+
         public:
             static MD5Hash* GenerateHash(VIMUFF::ImagePtr image);
 
@@ -245,7 +247,7 @@ namespace GEMUFF {
             ~MarrHildretchHash(){ free(hash); }
         };
 
-
+        typedef boost::shared_ptr<Hash::MD5Hash> MD5HashPtr;
 
 
       bool write(std::ofstream &_ofstream, AbstractHashPtr hash);
