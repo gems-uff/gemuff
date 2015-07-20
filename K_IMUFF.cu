@@ -57,7 +57,7 @@ __global__ void patch_k(uchar4* src1data, uchar4* delta, uchar4* outimage, int t
 
 
 extern "C"
-    void gIMUFFDiff(const uchar* src1data, const uchar* src2data, void* delta, int totalElements)
+    void gIMUFFDiff(const uchar* src1data, const uchar* src2data, uchar* delta, int totalElements)
     {
         int numElements = totalElements;
 
@@ -75,6 +75,14 @@ extern "C"
         dim3 dimBlock(256, 1, 1);
         dim3 dimGrid((numElements/dimBlock.x) + 1, 1);
         diff_k<<<dimGrid, dimBlock>>>(d_data1, d_data2, d_delta, numElements);
+
+        // check for error
+        cudaError_t error = cudaGetLastError();
+        if(error != cudaSuccess)
+        {
+          // print the CUDA error message and exit
+          printf("CUDA error: %s\n", cudaGetErrorString(error));
+        }
 
         checkCudaErrors(cudaMemcpy((void*)delta, d_delta,
                         sizeof(uchar4) * numElements, cudaMemcpyDeviceToHost));
@@ -153,4 +161,11 @@ extern "C"
          checkCudaErrors(cudaFree(d_imgB));
          checkCudaErrors(cudaFree(d_delta));
          checkCudaErrors(cudaFree(d_outimage));
+    }
+
+    extern "C" {
+        void gStartCuda(int device){
+            cudaSetDevice(device);
+        }
+
     }

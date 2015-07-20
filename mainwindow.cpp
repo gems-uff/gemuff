@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     imgDisplayLabel = new QLabel("");
     scrollArea = new QScrollArea();
 
+    gStartCuda(0);
     avcodec_register_all();
     av_register_all();
 }
@@ -59,6 +60,10 @@ void MainWindow::on_pushButton_clicked()
     diffPlayer.SetData(&diff2Info);
     diffPlayer.SetBufferSize(5);
     diffPlayer.SetDisplays(ui->av1, ui->av2, ui->avFinal);
+
+#ifdef VIMUFF_INFO
+    diff2Info.Summary();
+#endif
 
 
     //qDebug() << "Frames on Main: " << diffPlayer.GetTimelineLenght();

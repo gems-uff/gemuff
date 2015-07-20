@@ -65,6 +65,10 @@ namespace GEMUFF
             return img_c;
         }
 
+        void ImageRegister::ProcessGPUDiffD(uchar* elem1, uchar* elem2, uchar* result, int _size){
+            gIMUFFDiff(elem1, elem2, result, _size);
+        }
+
         QImage ImageRegister::ProcessCPUDiff(QImage* img1, QImage* img2){
             // Processar a diferenca
             uchar* delta = (uchar*) malloc(sizeof(uchar) * img1->width() * img1->height() * 4);
@@ -82,6 +86,16 @@ namespace GEMUFF
 
             free(delta);
             return img_c;
+        }
+
+        void ImageRegister::ProcessCPUDiffD(uchar* elem1, uchar* elem2, uchar* result, int _size){
+
+            for (int i = 0; i < _size; i++){
+                result[i*4] = elem1[i*4] ^ elem2[i*4];
+                result[i*4+1] = elem1[i*4+1] ^ elem2[i*4+1];
+                result[i*4+2] = elem1[i*4+2] ^ elem2[i*4+2];
+                result[i*4+3] = 0;
+            }
         }
 
         QImage ImageRegister::ProcessGPUPatch(QImage* img1, QImage* img2){

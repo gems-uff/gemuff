@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include "helperfunctions.h"
+#include "helper_timer.h"
 #include "video.h"
 #include "GEMUFF.h"
 
@@ -198,6 +199,19 @@ namespace GEMUFF {
                 for (int i = 0; i < diffChunks.size(); i++){
                     qDebug() << diffChunks[i].index << "op: " << diffChunks[i].diffData.op;
                 }
+            }
+
+            void Summary(){
+                int changes = 0;
+                int added = 0;
+                int removed = 0;
+                for (int i = 0; i < diffChunks.size(); i++){
+                    if (diffChunks[i].diffData.op == Diff::DO_Add) added++;
+                    if (diffChunks[i].diffData.op == Diff::DO_Remove) removed++;
+                    if (diffChunks[i].diffData.op == Diff::DO_Change) changes++;
+                }
+
+                qDebug() << "Added: " << added << " | Removed: " << removed << " | Changed: " << changes;
             }
 
         };

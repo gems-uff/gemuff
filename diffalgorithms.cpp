@@ -2,6 +2,12 @@
 
 #define NUM_BORDER 3
 
+struct toProcess {
+    int seq1_idx;
+    int seq2_idx;
+    int insertidx;
+};
+
 namespace GEMUFF {
     namespace Diff {
 
@@ -21,9 +27,17 @@ namespace GEMUFF {
             int &seq_2_offset, int seq1_count, int seq2_count,
             float threshold, std::vector<DiffChunk> &diffChunks){
 
+#ifdef VIMUFF_INFO
+            StopWatchInterface *timer = NULL;
+            sdkCreateTimer(&timer);
+#endif
+
             // Create a vector of similarity
             std::vector<Hash::AbstractHashPtr> _sim1, _sim2;
             int current_idx = seq_1_offset;
+            std::vector<toProcess> lateProcessing;
+            int maxElements = 25;
+
 
             for (int k = 0; k < seq1_count; k++){
                 VIMUFF::ImagePtr _img = VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset+k]);
@@ -63,6 +77,8 @@ namespace GEMUFF {
                 int l1_added = 0;
                 int l2_added = 0;
 
+
+
                 for (int k = 0; k < _simLCS.size(); k++){
                     Hash::AbstractHashPtr _or1 = _simLCS[k].l1_ref->getData();
                     Hash::AbstractHashPtr _or2 = _simLCS[k].l2_ref->getData();
@@ -72,6 +88,71 @@ namespace GEMUFF {
 
                     int size_subseq1_sim = _seq1_lcs_sim - seq_1_offset;
                     int size_subseq2_sim = _seq2_lcs_sim - seq_2_offset;
+
+                    if (size_subseq1_sim > 0 || size_subseq2_sim > 0){
+                        if (lateProcessing.size() > 0){
+                            int _currentLateIdx = 0;
+                            int _steps = ceil(lateProcessing.size() / maxElements);
+
+                            for (int _uu = 0; _uu < _steps; _uu++){
+                                int tt = maxElements < lateProcessing.size() - _currentLateIdx ? maxElements : lateProcessing.size() - _currentLateIdx;
+
+                                QImage __im1 = VIMUFF::ImageRegister::ImageAt(_seq1[lateProcessing[_currentLateIdx].seq1_idx])->toQImage();
+                                QImage __im2 = VIMUFF::ImageRegister::ImageAt(_seq2[lateProcessing[_currentLateIdx].seq2_idx])->toQImage();
+                                int _w = __im1.width();
+                                int _h = __im2.height();
+                                int _size = _w * _h;
+
+                                uchar* imageData1 = (uchar*) malloc(sizeof(uchar) * 4 * tt * _size);
+                                uchar* imageData2 = (uchar*) malloc(sizeof(uchar) * 4 * tt * _size);
+                                uchar* imageDataRes = (uchar*) malloc(sizeof(uchar) * 4 * tt * _size);
+
+
+                                for (int _cindex = 0; _cindex < tt; _cindex++){
+                                    __im1 = VIMUFF::ImageRegister::ImageAt(_seq1[lateProcessing[_currentLateIdx + _cindex].seq1_idx])->toQImage();
+                                    __im2 = VIMUFF::ImageRegister::ImageAt(_seq2[lateProcessing[_currentLateIdx + _cindex].seq2_idx])->toQImage();
+                                    memcpy(&imageData1[4 * _size * _cindex], __im1.constBits(), sizeof(uchar) * 4 * _size);
+                                    memcpy(&imageData2[4 * _size * _cindex], __im2.constBits(), sizeof(uchar) * 4 * _size);
+                                }
+
+
+                                // Process the diff
+#ifdef VIMUFF_INFO
+                                sdkResetTimer(&timer);
+                                sdkStartTimer(&timer);
+#endif
+
+#ifdef VIMUFF_GPU
+
+                                VIMUFF::ImageRegister::ProcessGPUDiffD(imageData1, imageData2, imageDataRes, tt * _size);
+#else
+                                VIMUFF::ImageRegister::ProcessCPUDiffD(imageData1, imageData2, imageDataRes, tt * _size);
+#endif
+
+#ifdef VIMUFF_INFO
+                                sdkStopTimer(&timer);
+                                qDebug() << "**** Total changed: " << tt <<
+                                            " Mem. Used: " << (( (float)(tt * _size * sizeof(uchar)) * 4 * 3) / (float)(1024*1024)) <<
+                                            " Time elapsed (ms): " << sdkGetTimerValue(&timer);
+#endif
+
+                                for (int _cindex = 0; _cindex < tt; _cindex++){
+
+                                    QImage _diff =  QImage(&imageDataRes[4 * _size * _cindex],
+                                            _w, _h, QImage::Format_RGB32);
+
+                                    AddChunk(diffChunks, VIMUFF::ImagePtr(), boost::static_pointer_cast<Hash::MD5Hash>(_seq1[lateProcessing[_currentLateIdx + _cindex].seq1_idx]),
+                                        VIMUFF::ImageRegister::toImage(&_diff), Hash::MD5HashPtr(), DO_Change, lateProcessing[_currentLateIdx + _cindex].insertidx);
+                                }
+
+                                _currentLateIdx += tt;
+                                free(imageData1);
+                                free(imageData2);
+                                free(imageDataRes);
+                            }
+                        }
+                        lateProcessing.clear();
+                    }
 
                     for (int j = 0; j < size_subseq1_sim; j++){
                         // Removed
@@ -91,18 +172,11 @@ namespace GEMUFF {
                     }
 
 
-                    // Locate the lcs and mark it as changed
-                    QImage _im1 = VIMUFF::ImageRegister::ImageAt(_seq1[seq_1_offset])->toQImage();
-                    QImage _im2 = VIMUFF::ImageRegister::ImageAt(_seq2[seq_2_offset])->toQImage();
-
-#ifdef VIMUFF_GPU
-                    QImage _diff = VIMUFF::ImageRegister::ProcessGPUDiff(&_im1, &_im2);
-#else
-                    QImage _diff = VIMUFF::ImageRegister::ProcessCPUDiff(&_im1, &_im2);
-#endif
-
-                    AddChunk(diffChunks, VIMUFF::ImagePtr(), boost::static_pointer_cast<Hash::MD5Hash>(_seq1[seq_1_offset]),
-                             VIMUFF::ImageRegister::toImage(&_diff), Hash::MD5HashPtr(), DO_Change, current_idx);
+                    toProcess tp;
+                    tp.insertidx = current_idx;
+                    tp.seq1_idx = seq_1_offset;
+                    tp.seq2_idx = seq_2_offset;
+                    lateProcessing.push_back(tp);
 
                     l1_added++;
                     l2_added++;
@@ -110,6 +184,70 @@ namespace GEMUFF {
                     seq_1_offset++;
                     seq_2_offset++;
                 }
+
+
+                if (lateProcessing.size() > 0){
+                    int _currentLateIdx = 0;
+                    int _steps = ceil(lateProcessing.size() / maxElements);
+
+                    for (int _uu = 0; _uu < _steps; _uu++){
+                        int tt = maxElements < lateProcessing.size() - _currentLateIdx ? maxElements : lateProcessing.size() - _currentLateIdx;
+
+                        QImage __im1 = VIMUFF::ImageRegister::ImageAt(_seq1[lateProcessing[_currentLateIdx].seq1_idx])->toQImage();
+                        QImage __im2 = VIMUFF::ImageRegister::ImageAt(_seq2[lateProcessing[_currentLateIdx].seq2_idx])->toQImage();
+                        int _w = __im1.width();
+                        int _h = __im2.height();
+                        int _size = _w * _h;
+
+                        uchar* imageData1 = (uchar*) malloc(sizeof(uchar) * 4 * tt * _size);
+                        uchar* imageData2 = (uchar*) malloc(sizeof(uchar) * 4 * tt * _size);
+                        uchar* imageDataRes = (uchar*) malloc(sizeof(uchar) * 4 * tt * _size);
+
+                        for (int _cindex = 0; _cindex < tt; _cindex++){
+                            __im1 = VIMUFF::ImageRegister::ImageAt(_seq1[lateProcessing[_currentLateIdx + _cindex].seq1_idx])->toQImage();
+                            __im2 = VIMUFF::ImageRegister::ImageAt(_seq2[lateProcessing[_currentLateIdx + _cindex].seq2_idx])->toQImage();
+                            memcpy(&imageData2[4 * _size * _cindex], __im2.constBits(), sizeof(uchar) * 4 * _size);
+                            memcpy(&imageData1[4 * _size * _cindex], __im1.constBits(), sizeof(uchar) * 4 * _size);
+
+                        }
+
+                        // Process the diff
+#ifdef VIMUFF_INFO
+                        sdkResetTimer(&timer);
+                        sdkStartTimer(&timer);
+#endif
+
+#ifdef VIMUFF_GPU
+                        VIMUFF::ImageRegister::ProcessGPUDiffD(imageData1, imageData2, imageDataRes, tt * _size);
+#else
+                        VIMUFF::ImageRegister::ProcessCPUDiffD(imageData1, imageData2, imageDataRes, tt * _size);
+#endif
+
+#ifdef VIMUFF_INFO
+                        sdkStopTimer(&timer);
+                        qDebug() << "**** Total changed: " << tt <<
+                                    " Mem. Used: " << (( (float)(tt * _size * sizeof(uchar)) * 4 * 3) / (float)(1024*1024)) <<
+                                    " Time elapsed (ms): " << sdkGetTimerValue(&timer);
+#endif
+
+                        for (int _cindex = 0; _cindex < tt; _cindex++){
+
+                            QImage _diff =  QImage(&imageDataRes[4 * _size * _cindex],
+                                    _w, _h, QImage::Format_RGB32);
+
+                            AddChunk(diffChunks, VIMUFF::ImagePtr(), boost::static_pointer_cast<Hash::MD5Hash>(_seq1[lateProcessing[_currentLateIdx + _cindex].seq1_idx]),
+                                VIMUFF::ImageRegister::toImage(&_diff), Hash::MD5HashPtr(), DO_Change, lateProcessing[_currentLateIdx + _cindex].insertidx);
+                        }
+
+                        _currentLateIdx += tt;
+                        free(imageData1);
+                        free(imageData2);
+                        free(imageDataRes);
+                    }
+                }
+                lateProcessing.clear();
+
+
 
                 for (int j = 0; j < seq1_count - l1_added; j++){
                     // Removed
@@ -126,6 +264,11 @@ namespace GEMUFF {
                    seq_2_offset++;
                 }
             }
+
+#ifdef VIMUFF_INFO
+            sdkDeleteTimer(&timer);
+#endif
+
         }
 
          Diff2Info Diff2(GEMUFF::VIMUFF::Video *v1,
@@ -324,6 +467,11 @@ namespace GEMUFF {
             int current_lcs_idx = 0;
             int current_idx = 0;
 
+#ifdef VIMUFF_INFO
+            int totalSimiliartyProcessing = 0;
+            QTime time;
+#endif
+
             while (seq1_current_index < _seq1.size()){
 
                 LCSEntry *_lcsKey = NULL;
@@ -374,6 +522,7 @@ namespace GEMUFF {
 
                         CheckSimilarity(_seq1, _seq2, seq1_current_index, seq2_current_index,
                                         _seq1_nframes, _seq2_nframes, threshold, _diffChunks);
+
 
                     } else if (_seq1_nframes > 0){
 
