@@ -92,7 +92,7 @@ namespace GEMUFF {
                     if (size_subseq1_sim > 0 || size_subseq2_sim > 0){
                         if (lateProcessing.size() > 0){
                             int _currentLateIdx = 0;
-                            int _steps = ceil(lateProcessing.size() / maxElements);
+                            int _steps = ceil((float)lateProcessing.size() / (float)maxElements);
 
                             for (int _uu = 0; _uu < _steps; _uu++){
                                 int tt = maxElements < lateProcessing.size() - _currentLateIdx ? maxElements : lateProcessing.size() - _currentLateIdx;
@@ -188,7 +188,7 @@ namespace GEMUFF {
 
                 if (lateProcessing.size() > 0){
                     int _currentLateIdx = 0;
-                    int _steps = ceil(lateProcessing.size() / maxElements);
+                    int _steps = ceil((float)lateProcessing.size() / (float) maxElements);
 
                     for (int _uu = 0; _uu < _steps; _uu++){
                         int tt = maxElements < lateProcessing.size() - _currentLateIdx ? maxElements : lateProcessing.size() - _currentLateIdx;

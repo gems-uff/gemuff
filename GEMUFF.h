@@ -10,7 +10,7 @@ typedef signed long long long64;
 #endif
 
 #define VIMUFF_INFO
-#undef VIMUFF_GPU
+#define VIMUFF_GPU
 
 namespace GEMUFF {
     namespace VIMUFF {

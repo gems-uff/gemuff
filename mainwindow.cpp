@@ -433,9 +433,17 @@ void MainWindow::on_btnPatchProcess_clicked()
 
 void MainWindow::on_btn_saveVideoPatched_clicked()
 {
+#ifdef VIMUFF_INFO
+            QTime time;
+            time.restart();
+#endif
+
     GEMUFF::VIMUFF::Video videoPatched =
             GEMUFF::Diff::Patch(diff2Info, &v1);
 
+#ifdef VIMUFF_INFO
+            qDebug() << "Processing and saving time (ms): " << time.elapsed();
+#endif
 
     // v_t.LoadFromImages(v1.getSequenceHash(), 960, 540,
       //                  AV_CODEC_ID_RAWVIDEO, AV_PIX_FMT_RGB32, AV_PIX_FMT_YUV420P, 400000, 30, v1.getFormatContext());
