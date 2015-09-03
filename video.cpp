@@ -91,9 +91,21 @@ namespace GEMUFF
 #endif
             RetrieveHashTable(fmt_ctx, codec_context);
 
+            //for (int i = 0; i < frame_sequence_hash.size(); i++)
+              //  printf("%s\n", frame_sequence_hash[i]->toString().c_str());
+
 #ifdef VIMUFF_INFO
             qDebug() << "Hash Calculation time(ms): " << time.elapsed();
             qDebug() << "Total Frames: " << frame_sequence_hash.size();
+
+            FILE *f;
+            f = fopen("/Users/josericardo/video.txt", "w");
+
+            for (int i = 0; i < frame_sequence_hash.size(); i++){
+                fprintf(f, "%s\n", frame_sequence_hash[i]->toString().c_str());
+            }
+
+            fclose(f);
 #endif
 
             return 0;

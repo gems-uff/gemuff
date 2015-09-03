@@ -16,6 +16,7 @@
 #include <QDebug>
 #include <boost/shared_ptr.hpp>
 #include <image.h>
+#include "md5cuda.h"
 
 //#define HASH_GPU
 
@@ -124,6 +125,7 @@ namespace GEMUFF {
         public:
             MD5Hash() : AbstractHash(T_MD5) {
             }
+
 
             ~MD5Hash() {}
 

@@ -293,9 +293,11 @@ namespace GEMUFF {
             QTime time;
             time.restart();
 #endif
-            std::vector<LCSEntry> _lcs = Helper::LCS(_seq1, _seq2, threshold);
+            std::vector<LCSEntry> _lcs = Helper::LCS(_seq1, _seq2);
+            //Helper::PrintList(_lcs, "tst");
 #ifdef VIMUFF_INFO
            qDebug() << "LCS Calculation time (ms): " << time.elapsed();
+           qDebug() << "LCS Size: " << _lcs.size();
            time.restart();
 #endif
 

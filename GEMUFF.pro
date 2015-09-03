@@ -14,7 +14,7 @@ TARGET = GEMUFF
 TEMPLATE = app
 INCLUDEPATH += /opt/local/include /usr/local/include /usr/include/ffmpeg $${OPENCV}/include
 QMAKE_LIBDIR += /opt/local/lib /usr/local/lib $${OPENCV}/lib
-LIBS += -lavcodec -lavformat -lswscale -lavutil -lssl -lcrypto -lopencv_core -lopencv_highgui -lopencv_imgproc  -lopencv_gpu -lboost_filesystem -lboost_system
+LIBS += -lavcodec -lavformat -lswscale -lavutil -lssl -lcrypto -lopencv_core -lopencv_highgui -lopencv_imgproc  -lopencv_gpu -lboost_filesystem -lboost_system -lxdiff
 message("libs:" $$QMAKE_LIBDIR)
 
 SOURCES += main.cpp \
@@ -46,13 +46,18 @@ HEADERS  += mainwindow.h \
     hash.h \
     image.h \
     VideoPlayer.h \
-    mergeplayer.h
+    mergeplayer.h \
+    md5cuda.h \
+    DiffErr.h \
+    lcs.h \
+    Matrix.h \
+    RandomAccessSequence.h
 
 FORMS    += mainwindow.ui
 
 QMAKE_LFLAGS += '-Wl,-rpath,/usr/local/cuda/lib'
 
-CUDA_SOURCES = K_IMUFF.cu
+CUDA_SOURCES = K_IMUFF.cu md5cuda.cu
 
 unix {
    # CUDA_INSTALL_PATH = $$quote(/usr/local/cuda)

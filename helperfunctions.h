@@ -20,7 +20,8 @@ namespace GEMUFF {
         static std::vector<LCSEntry> LCS(std::vector<Hash::AbstractHashPtr> _s,
                                          std::vector<Hash::AbstractHashPtr> _t,
                                          float thresold);
-
+        static std::vector<LCSEntry> LCS(std::vector<Hash::AbstractHashPtr> _s,
+                                         std::vector<Hash::AbstractHashPtr> _t);
         static void PrintList(std::vector<Hash::AbstractHashPtr> &list, char *name);
     };
 }

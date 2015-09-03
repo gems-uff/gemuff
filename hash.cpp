@@ -17,9 +17,15 @@ namespace GEMUFF {
         MD5Hash *MD5Hash::GenerateHash(VIMUFF::ImagePtr image){
             MD5Hash *_hashKey = new MD5Hash();
 
+//#ifdef VIMUFF_GPU
+  //          md5WithCuda(image->getData(),
+    //                    image->getHeight()*image->getWidth()*image->getChannels(),
+      //                  &_hashKey->key[0]);
+//#else
             MD5(image->getData(),
                 image->getHeight()*image->getWidth()*image->getChannels(),
                 &_hashKey->key[0]);
+//#endif
 
             return _hashKey;
         }
