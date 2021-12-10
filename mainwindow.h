@@ -8,6 +8,7 @@
 #include <QScrollArea>
 #include <QImageReader>
 #include <QFileDialog>
+#include <QElapsedTimer>
 //#include "VideoProcessing.h"
 #include "video.h"
 #include "VideoPlayer.h"
@@ -76,9 +77,9 @@ private:
     QScrollArea* scrollArea;
     QImageReader reader;
 
-    GEMUFF::VIMUFF::Video v1;
-    GEMUFF::VIMUFF::Video v2;
-    GEMUFF::VIMUFF::Video base;
+    GEMUFF::VIMUFF::VideoPtr v1;
+    GEMUFF::VIMUFF::VideoPtr v2;
+    GEMUFF::VIMUFF::VideoPtr base;
     GEMUFF::Diff::Diff2Info diff2Info;
     GEMUFF::Diff::Diff3Info diff3Info;
     //GEMUFF::VIMUFF::MergeProcessing mergeProcessing;
@@ -89,7 +90,7 @@ private:
     GEMUFF::VIMUFF::Diff2Player diffPlayer;
     GEMUFF::VIMUFF::PatchPlayer patchPlayer;
     GEMUFF::VIMUFF::MergePlayer mergePlayer;
-    GEMUFF::VIMUFF::Video video_patched;
+    GEMUFF::VIMUFF::Video* video_patched;
 };
 
 #endif // MAINWINDOW_H

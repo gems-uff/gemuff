@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include <ui_mainwindow.h>
 //#include "videoprocessing.h"
-#include "GEMUFF.h"
+#include "gemufflib.h"
 
 /*IplImage* QImage2IplImage(QImage *qimg)
 {
@@ -25,9 +25,9 @@ MainWindow::MainWindow(QWidget *parent) :
     imgDisplayLabel = new QLabel("");
     scrollArea = new QScrollArea();
 
+    base = v1 = v2 = NULL;
+    video_patched = NULL;
     gStartCuda(0);
-    avcodec_register_all();
-    av_register_all();
 }
 
 MainWindow::~MainWindow()
@@ -54,9 +54,9 @@ void MainWindow::on_pushButton_clicked()
     qDebug() << "Processing in CPU";
 #endif
 
-    diff2Info = GEMUFF::Diff::Diff2(&v1, &v2, ui->spinSimilarity->value() / 100.0);
+    diff2Info = GEMUFF::Diff::Diff2(v1, v2, ui->spinSimilarity->value() / 100.0);
     diffPlayer.Clear();
-    diffPlayer.SetVideo(&v1);
+    diffPlayer.SetVideo(v1);
     diffPlayer.SetData(&diff2Info);
     diffPlayer.SetBufferSize(5);
     diffPlayer.SetDisplays(ui->av1, ui->av2, ui->avFinal);
@@ -214,12 +214,15 @@ void MainWindow::on_slider_valueChanged(int value)
 
 void MainWindow::on_v1_diff_load_clicked()
 {
-    QString file = QFileDialog::getOpenFileName(this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
-                  tr("Videos (*.avi *.mpg *.mov)"));
+    QString file = QFileDialog::getOpenFileName(this, "Video", tr("Videos (*.avi *.mpeg *.mov *.mp4)"),
+                  tr("Videos (*.avi *.mpeg *.mov *.mp4)"));
 
-    if (file != NULL){
+    if (!file.isEmpty()){
         qDebug() << "Loading Video " << file.toStdString().c_str();
-        v1.LoadVideo(file.toStdString());
+
+        v1.reset(GEMUFF::VIMUFF::Video::loadVideo(file.toStdString(), GEMUFF::Hash::T_MD5));
+        v1->PrintHashSequence("/home/josericardo/hashseq1.txt");
+        qDebug() << "Den: " << v1->getAVRational().den << "Num: " << v1->getAVRational().num;
     }
 
     /*std::vector<std::string>& seq_hash = v1.getSequenceHash();
@@ -236,12 +239,13 @@ void MainWindow::on_v1_diff_load_clicked()
 
 void MainWindow::on_v2_diff_load_clicked()
 {
-    QString file = QFileDialog::getOpenFileName(this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
-                  tr("Videos (*.avi *.mpg *.mov)"));
+    QString file = QFileDialog::getOpenFileName(this, "Video", tr("Videos (*.avi *.mpeg *.mov *.mp4)"),
+                  tr("Videos (*.avi *.mpeg *.mov *.mp4)"));
 
-    if (file != NULL){
+    if (!file.isEmpty()){
         qDebug() << "Loading Video " << file.toStdString().c_str();
-        v2.LoadVideo(file.toStdString());
+
+        v2.reset(GEMUFF::VIMUFF::Video::loadVideo(file.toStdString(), GEMUFF::Hash::T_MD5));
     }
 
     // Carregar primeiro frame do video
@@ -259,19 +263,20 @@ void MainWindow::on_delta_save_clicked()
     QString file = QFileDialog::getSaveFileName(this, "Save Delta",
         QDir::currentPath(), "VIMUFF Delta (*.vimuff)", new QString("VIMUFF Delta (*.vimuff"));
 
-    if (file != NULL)
+    if (!file.isEmpty())
     {
 #ifdef VIMUFF_INFO
-            QTime time;
+            QElapsedTimer time;
             time.restart();
 #endif
-        std::ofstream _diffFile;
+        //std::ofstream _diffFile;
 
-        _diffFile.open(file.toStdString().c_str(),
-                       std::ios::binary | std::ios::out | std::ios::app);
-        diff2Info.write(_diffFile);
+        //_diffFile.open(file.toStdString().c_str(),
+                       //std::ios::binary | std::ios::out | std::ios::app);
+        diff2Info.save(file.toStdString().c_str());
+        //diff2Info.save(file.toStdString().c_str());
 
-        _diffFile.close();
+        //_diffFile.close();
 
 #ifdef VIMUFF_INFO
             qDebug() << "Processing and saving time (ms): " << time.elapsed();
@@ -285,8 +290,10 @@ void MainWindow::on_v1_load_patch_load_clicked()
     QString file = QFileDialog::getOpenFileName(this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
                   tr("Videos (*.avi *.mpg *.mov)"));
 
-    if (file != NULL)
-        v2.LoadVideo(file.toStdString());
+    if (!file.isEmpty()){
+
+        v2.reset(GEMUFF::VIMUFF::Video::loadVideo(file.toStdString(), GEMUFF::Hash::T_MD5));
+    }
 }
 
 void MainWindow::on_delta_patch_load_clicked()
@@ -309,9 +316,15 @@ void MainWindow::on_btnProcessMerge_clicked()
 {
    ui->merge_slider->setMinimum(0);
 
-    diff3Info = GEMUFF::Diff::Diff3(&base, &v1, &v2, 0.2f);
+
+
+    base.reset(GEMUFF::VIMUFF::Video::loadVideo("/media/josericardo/Novo volume/vimuffdata/VideoBase.mp4", GEMUFF::Hash::T_MD5));
+    v1.reset(GEMUFF::VIMUFF::Video::loadVideo("/media/josericardo/Novo volume/vimuffdata/VideoBaseAddFinal.mp4", GEMUFF::Hash::T_MD5));
+    v2.reset(GEMUFF::VIMUFF::Video::loadVideo("/media/josericardo/Novo volume/vimuffdata/VideoBaseLegenda02.mp4", GEMUFF::Hash::T_MD5));
+
+    diff3Info = GEMUFF::Diff::Diff3(base, v1, v2, 0.5f);
     mergePlayer.SetDisplays(ui->lblBaseMerge, ui->lblV1Merge, ui->lblV2Merge, ui->lblResultMerge);
-    mergePlayer.SetBase(&base);
+    mergePlayer.SetBase(base);
     mergePlayer.SetData(&diff3Info);
     mergePlayer.SetBufferSize(5);
 
@@ -359,8 +372,9 @@ void MainWindow::on_v1_merge_load_clicked()
     QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
                  // tr("Videos (*.avi *.mpg *.mov)"));
 
-    if (file != NULL)
-        v1.LoadVideo(file.toStdString());
+    if (!file.isEmpty()){
+        v1.reset(GEMUFF::VIMUFF::Video::loadVideo(file.toStdString(), GEMUFF::Hash::T_MD5));
+    }
 }
 
 void MainWindow::on_v2_merge_load_clicked()
@@ -368,8 +382,10 @@ void MainWindow::on_v2_merge_load_clicked()
     QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
                  // tr("Videos (*.avi *.mpg *.mov)"));
 
-    if (file != NULL)
-        v2.LoadVideo(file.toStdString());
+    if (!file.isEmpty()){        
+        v2.reset(GEMUFF::VIMUFF::Video::loadVideo(file.toStdString(), GEMUFF::Hash::T_MD5));
+    }
+
 }
 
 void MainWindow::on_merge_slider_valueChanged(int value)
@@ -387,8 +403,11 @@ void MainWindow::on_btnLoadV1_clicked()
     QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
                  // tr("Videos (*.avi *.mpg *.mov)"));
 
-    if (file != NULL)
-        v1.LoadVideo(file.toStdString());
+    if (!file.isEmpty()){        
+        v1.reset(GEMUFF::VIMUFF::Video::loadVideo(file.toStdString(), GEMUFF::Hash::T_MD5));
+    }
+
+    v1->PrintHashSequence("/home/josericardo/v1HashPatch.txt");
 }
 
 void MainWindow::on_btnDiffLoad_clicked()
@@ -396,7 +415,7 @@ void MainWindow::on_btnDiffLoad_clicked()
     QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
                  // tr("Videos (*.avi *.mpg *.mov)"));
 
-    if (file != NULL){
+    if (!file.isEmpty()){
         std::ifstream _delta;
         _delta.open(file.toStdString().c_str(),
                    std::ios::binary | std::ios::out | std::ios::app);
@@ -412,7 +431,7 @@ void MainWindow::on_btnPatchProcess_clicked()
     ui->slider->setMinimum(0);
 
     // Processar a diferenca
-    patchPlayer.setVideo(&v1);
+    patchPlayer.setVideo(v1.get());
     patchPlayer.setDisplay(ui->lblV1_to_Patch, ui->lblDiff, ui->lblPatchResult);
     patchPlayer.setSlider(ui->patch_slider);
     //patchPlayer.SetBufferSize(5);
@@ -426,27 +445,34 @@ void MainWindow::on_btnPatchProcess_clicked()
     ui->lblV1_to_Patch->setScaledContents(true);
     ui->lblDiff->setScaledContents(true);
     ui->lblPatchResult->setScaledContents(true);
-
-
-
 }
 
 void MainWindow::on_btn_saveVideoPatched_clicked()
 {
 #ifdef VIMUFF_INFO
-            QTime time;
+            QElapsedTimer time;
             time.restart();
 #endif
 
-    GEMUFF::VIMUFF::Video videoPatched =
-            GEMUFF::Diff::Patch(diff2Info, &v1);
+    QString file = QFileDialog::getSaveFileName(this, "Save Video",
+        QDir::currentPath());
+
+    if (!file.isEmpty()){
+        GEMUFF::VIMUFF::Video* videoPatched =
+            GEMUFF::Diff::Patch(diff2Info, v1);
+        videoPatched->Save(file.toStdString().c_str());
+        delete videoPatched;
+    }
+
+
 
 #ifdef VIMUFF_INFO
             qDebug() << "Processing and saving time (ms): " << time.elapsed();
 #endif
 
-    // v_t.LoadFromImages(v1.getSequenceHash(), 960, 540,
-      //                  AV_CODEC_ID_RAWVIDEO, AV_PIX_FMT_RGB32, AV_PIX_FMT_YUV420P, 400000, 30, v1.getFormatContext());
+     //videoPatched.LoadFromImages(v1.getSequenceHash(), v1.getFrameWidth(), v1.getFrameHeight(),
+       //                          AV_CODEC_ID_RAWVIDEO, AV_PIX_FMT_RGB32, AV_PIX_FMT_YUV420P, v1.getBitRate(),
+         //                        (AVRational){1,24}, 10, 1);
 
 }
 
@@ -455,6 +481,6 @@ void MainWindow::on_base_merge_load_clicked()
     QString file = QFileDialog::getOpenFileName(this);// this, "Video", tr("Videos (*.avi *.mpg *.mov)"),
                  // tr("Videos (*.avi *.mpg *.mov)"));
 
-    if (file != NULL)
-        base.LoadVideo(file.toStdString());
+    if (!file.isEmpty())
+        base.reset(GEMUFF::VIMUFF::Video::loadVideo(file.toStdString(), GEMUFF::Hash::T_MD5));
 }

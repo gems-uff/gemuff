@@ -28,263 +28,187 @@ namespace GEMUFF {
             return mFrames.size();
         }
 
-        void MergePlayer::GeneratePlayerData(){
+        int MergePlayer::getNumFrames(Diff::SeqMark &seqMark, std::vector<Diff::DiffChunk>& diffChunk){
+            int nFrames = 0;
+            for (int i = seqMark.offset - seqMark.nFrames; i < seqMark.offset; i++){
+                nFrames += diffChunk[i].diffData.size();
+            }
 
-            int currentLCSIdx = 0;
-            int current_base_idx = 0;
-            int current_chunk_idx = 0;
+            nFrames += diffChunk[seqMark.offset].diffData.size();
 
+            return nFrames;
+        }
 
-            std::vector<Hash::AbstractHashPtr> _vbaseseq =
-                    vbase->getSequenceHash();
+        std::vector<FramePlayer> MergePlayer::generateSubSequence(Diff::SeqMark seqMark, std::vector<Diff::DiffChunk>& diffChunk, int side){
 
-            while (currentLCSIdx < diff3->lcs.size()){
-                // Locate the lcs in all lists
-                int idx_base_lcs = Diff::FindKey(diff3->lcs[currentLCSIdx].l1_ref, _vbaseseq, current_base_idx, 1.0f);
+            std::vector<FramePlayer> result;
 
-                bool haschanged = false;
+            for (int i = seqMark.offset - seqMark.nFrames; i < seqMark.offset; i++){
 
-                    if (current_chunk_idx < diff3->diff3chunks.size()){
-                        Diff::Diff3Chunk _chunk = diff3->diff3chunks[current_chunk_idx];
+                for (int j = 0; j < diffChunk[i].diffData.size(); j++){
 
-                        if (_chunk.index == current_base_idx){
+                    Diff::DiffData _df = diffChunk[i].diffData[j];
 
-                            // Check for conflicts
-                            if (_chunk.basev1.size() > 0 && _chunk.basev2.size() > 0){
+                    FramePlayer _fp;
 
-                                int max = _chunk.basev1.size() > _chunk.basev2.size() ? _chunk.basev1.size() : _chunk.basev2.size();
+                    if (side == 0){
+                        _fp.op_b_v1 = _df.op;
 
-                                for (int i = 0; i < max; i++){
-
-
-                                    FramePlayer frame;
-
-                                    if (i < _chunk.basev1.size()){
-                                        frame.op_b_v1 = _chunk.basev1[i].op;
-
-                                        if (frame.op_b_v1 != Diff::DO_Remove)
-                                            frame.v1 = _chunk.basev1[i].v1_Image;
-
-                                        if (frame.op_b_v1 == Diff::DO_Change)
-                                            haschanged = true;
-                                    }
-
-                                    if (i < _chunk.basev2.size()){
-                                        frame.op_b_v2 = _chunk.basev2[i].op;
-
-                                        if (frame.op_b_v2 != Diff::DO_Remove)
-                                            frame.v2 = _chunk.basev2[i].v1_Image;
-
-                                        if (frame.op_b_v2 == Diff::DO_Change)
-                                            haschanged = true;
-                                    }
-
-                                    if (current_base_idx < idx_base_lcs ){
-                                        frame.base = ImageRegister::ImageAt(_vbaseseq[current_base_idx++]);
-                                    } else if (current_base_idx == idx_base_lcs && idx_base_lcs == diff3->lcs.size()-1){
-                                        frame.base = ImageRegister::ImageAt(_vbaseseq[current_base_idx++]);
-                                    }
-
-
-                                    mFrames.push_back(frame);
-                                }
-
-                            } else { // Only one side has modified
-
-
-                                if (_chunk.basev1.size() > 0){
-
-                                    for (int i = 0; i < _chunk.basev1.size(); i++){
-                                        FramePlayer frame;
-
-                                        if (_chunk.basev1[i].op == Diff::DO_Change){
-                                            frame.op_b_v1 = _chunk.basev1[i].op;
-                                            frame.base = _chunk.basev1[i].v1_Image;
-                                            frame.v1 = _chunk.basev1[i].v2_Image;
-                                            frame.v2 = _chunk.basev1[i].v1_Image;
-                                            frame.op_b_v2 = Diff::DO_None;
-                                            current_base_idx++;
-                                            haschanged = true;
-                                        } else if (_chunk.basev1[i].op == Diff::DO_Remove){
-                                            frame.op_b_v1 = _chunk.basev1[i].op;
-                                            frame.base = _chunk.basev1[i].v1_Image;
-                                            frame.op_b_v2 = Diff::DO_None;
-                                            frame.v2 = _chunk.basev1[i].v1_Image;
-                                            current_base_idx++;
-                                        } else if (_chunk.basev1[i].op == Diff::DO_Add){
-                                            frame.op_b_v1 = _chunk.basev1[i].op;
-                                            frame.op_b_v2 = Diff::DO_None;
-                                            frame.v1 = _chunk.basev1[i].v2_Image;
-                                        }
-
-                                        mFrames.push_back(frame);
-                                    }
-
-
-                                } else if (_chunk.basev2.size() > 0) {
-
-                                    for (int i = 0; i < _chunk.basev2.size(); i++){
-                                        FramePlayer frame;
-
-                                        if (_chunk.basev2[i].op == Diff::DO_Change){
-                                            frame.op_b_v2 = _chunk.basev2[i].op;
-                                            frame.base = _chunk.basev2[i].v1_Image;
-                                            frame.v2 = _chunk.basev2[i].v2_Image;
-                                            frame.v1 = _chunk.basev2[i].v1_Image;
-                                            frame.op_b_v1 = Diff::DO_None;
-                                            current_base_idx++;
-                                            mFrames.push_back(frame);
-                                            haschanged = true;
-                                        } else if (_chunk.basev2[i].op == Diff::DO_Remove){
-                                            frame.op_b_v2 = _chunk.basev2[i].op;
-                                            frame.base = _chunk.basev2[i].v1_Image;
-                                            frame.v1 = _chunk.basev2[i].v1_Image;
-                                            frame.op_b_v1 = Diff::DO_None;
-                                            current_base_idx++;
-                                        } else if (_chunk.basev2[i].op == Diff::DO_Add){
-                                            frame.op_b_v2 = _chunk.basev2[i].op;
-                                            frame.op_b_v1 = Diff::DO_None;
-                                            frame.v2 = _chunk.basev2[i].v2_Image;
-                                        }
-
-                                        mFrames.push_back(frame);
-                                    }
-
-                                }
-
-                            }
-
-
-
-                            current_chunk_idx++;
+                        if (_df.op == Diff::DO_Add){
+                            _fp.v1 = _df.v2_Image;
+                        } else if (_df.op == Diff::DO_Remove){
+                            _fp.base = _fp.v2 = ImageRegister::ImageAt(_df.v1_HashPtr);
+                        } else if (_df.op == Diff::DO_Change){
+                            _fp.base = _fp.v2 = ImageRegister::ImageAt(_df.v1_HashPtr);
+                            _fp.v1 = ImageRegister::ProcessDIFF(ImageRegister::ImageAt(_df.v1_HashPtr),
+                                                                _df.v2_Image, Device::D_GPU);
                         }
-
                     }
+                    else {
+                        _fp.op_b_v2 = _df.op;
 
-
-                    if (!haschanged){
-                       while (current_base_idx <= idx_base_lcs){
-                            FramePlayer frame;
-                            frame.op_b_v1 = frame.op_b_v2 = Diff::DO_None;
-                            frame.v1 = frame.v2 = frame.base = ImageRegister::ImageAt(_vbaseseq[current_base_idx]);
-                            mFrames.push_back(frame);
-                            current_base_idx++;
+                        if (_df.op == Diff::DO_Add){
+                            _fp.v2 = _df.v2_Image;
+                        } else if (_df.op == Diff::DO_Remove){
+                            _fp.base = _fp.v1 = ImageRegister::ImageAt(_df.v1_HashPtr);
+                        } else if (_df.op == Diff::DO_Change){
+                            _fp.base = _fp.v1 = ImageRegister::ImageAt(_df.v1_HashPtr);
+                            _fp.v2 = ImageRegister::ProcessDIFF(ImageRegister::ImageAt(_df.v1_HashPtr),
+                                                                _df.v2_Image, Device::D_GPU);
                         }
                     }
 
+                    result.push_back(_fp);
+                }
 
+                if (diffChunk[i].lcsEntry.isValid()){
+                    FramePlayer _fp;
+                    _fp.base = _fp.v1 = _fp.v2 = ImageRegister::ImageAt(diffChunk[i].lcsEntry.l1_ref);
+                }
+            }
 
-                currentLCSIdx++;
+            // Last chunk without adding the LCS
+            std::vector<Diff::DiffData> diffData = diffChunk[seqMark.offset].diffData;
+            for (int j = 0; j < diffData.size(); j++){
 
+                Diff::DiffData _df = diffData[j];
+
+                FramePlayer _fp;
+
+                if (side == 0){
+                    _fp.op_b_v1 = _df.op;
+
+                    if (_df.op == Diff::DO_Add){
+                        _fp.v1 = _df.v2_Image;
+                    } else if (_df.op == Diff::DO_Remove){
+                        _fp.base = _fp.v2 = ImageRegister::ImageAt(_df.v1_HashPtr);
+                    } else if (_df.op == Diff::DO_Change){
+                        _fp.base = _fp.v2 = ImageRegister::ImageAt(_df.v1_HashPtr);
+                        _fp.v1 = _df.v2_Image;
+                    }
+                }
+                else {
+                    _fp.op_b_v2 = _df.op;
+
+                    if (_df.op == Diff::DO_Add){
+                        _fp.v2 = _df.v2_Image;
+                    } else if (_df.op == Diff::DO_Remove){
+                        _fp.base = _fp.v1 = ImageRegister::ImageAt(_df.v1_HashPtr);
+                    } else if (_df.op == Diff::DO_Change){
+                        _fp.base = _fp.v1 = ImageRegister::ImageAt(_df.v1_HashPtr);
+                        _fp.v2 = _df.v2_Image;
+                    }
+                }
+
+                result.push_back(_fp);
             }
 
 
-            // Process the rest of frames
-            int _s = diff3->diff3chunks.size();
-            while (current_chunk_idx < diff3->diff3chunks.size()){
-
-                        Diff::Diff3Chunk _chunk = diff3->diff3chunks[current_chunk_idx];
-
-                        if (_chunk.index == current_base_idx){
-
-                            // Check for conflicts
-                            if (_chunk.basev1.size() > 0 && _chunk.basev2.size() > 0){
-
-                                int max = _chunk.basev1.size() > _chunk.basev2.size() ? _chunk.basev1.size() : _chunk.basev2.size();
-
-                                for (int i = 0; i < max; i++){
-                                    FramePlayer frame;
-
-                                    if (i < _chunk.basev1.size()){
-                                        frame.op_b_v1 = _chunk.basev1[i].op;
-                                        frame.v1 = _chunk.basev1[i].v1_Image;
-                                    }
-
-                                    if (i < _chunk.basev2.size()){
-                                        frame.op_b_v2 = _chunk.basev2[i].op;
-                                        frame.v2 = _chunk.basev2[i].v1_Image;
-                                    }
-
-                                    if (current_base_idx < _vbaseseq.size()){
-                                        frame.base = ImageRegister::ImageAt(_vbaseseq[current_base_idx++]);
-                                    }
-
-                                    mFrames.push_back(frame);
-                                }
-
-                            } else { // Only one side has modified
+            return result;
+        }
 
 
 
-                                if (_chunk.basev1.size() > 0){
+        void MergePlayer::GeneratePlayerData(){
 
-                                    for (int i = 0; i < _chunk.basev1.size(); i++){
-                                        FramePlayer frame;
+            int currentLCSIdx = 0;
 
-                                        if (_chunk.basev1[i].op == Diff::DO_Change){
-                                            frame.op_b_v1 = _chunk.basev1[i].op;
-                                            frame.base = _chunk.basev1[i].v1_Image;
-                                            frame.v1 = _chunk.basev1[i].v2_Image;
-                                            frame.v2 = _chunk.basev1[i].v1_Image;
-                                            frame.op_b_v2 = Diff::DO_None;
-                                        } else if (_chunk.basev1[i].op == Diff::DO_Remove){
-                                            frame.op_b_v1 = _chunk.basev1[i].op;
-                                            frame.base = _chunk.basev1[i].v1_Image;
-                                            frame.op_b_v2 = Diff::DO_None;
-                                            frame.v2 = _chunk.basev1[i].v1_Image;
-                                        } else if (_chunk.basev1[i].op == Diff::DO_Add){
-                                            frame.op_b_v1 = _chunk.basev1[i].op;
-                                            frame.op_b_v2 = Diff::DO_None;;
-                                            frame.v1 = _chunk.basev1[i].v2_Image;
-                                        }
+            while (currentLCSIdx < diff3->diff3Chunks.size()){
 
-                                        mFrames.push_back(frame);
-                                    }
+                Diff::Diff3Chunk _currentChunk = diff3->diff3Chunks[currentLCSIdx++];                
 
 
-                                } else if (_chunk.basev2.size() > 0) {
+               int nFramesv1 = getNumFrames(_currentChunk.v1, diff3->diffBaseToV1);
+               int nFramesV2 = getNumFrames(_currentChunk.v2, diff3->diffBaseToV2);
 
-                                    for (int i = 0; i < _chunk.basev2.size(); i++){
-                                        FramePlayer frame;
+                // Conflict
+                if (nFramesv1 > 0 && nFramesV2 > 0){
 
-                                        if (_chunk.basev2[i].op == Diff::DO_Change){
-                                            frame.op_b_v2 = _chunk.basev2[i].op;
-                                            frame.base = _chunk.basev2[i].v1_Image;
-                                            frame.v2 = _chunk.basev2[i].v2_Image;
-                                            frame.v1 = _chunk.basev2[i].v1_Image;
-                                            frame.op_b_v1 = Diff::DO_None;
-                                            mFrames.push_back(frame);
-                                        } else if (_chunk.basev2[i].op == Diff::DO_Remove){
-                                            frame.op_b_v2 = _chunk.basev2[i].op;
-                                            frame.base = _chunk.basev2[i].v1_Image;
-                                            frame.v1 = _chunk.basev2[i].v1_Image;
-                                            frame.op_b_v1 = Diff::DO_None;
-                                        } else if (_chunk.basev2[i].op == Diff::DO_Add){
-                                            frame.op_b_v2 = _chunk.basev2[i].op;
-                                            frame.op_b_v1 = Diff::DO_None;
-                                            frame.v2 = _chunk.basev2[i].v2_Image;
-                                        }
+                    // Add Base Frame
+                    int currentFramesIdx = mFrames.size();
 
-                                        mFrames.push_back(frame);
-                                    }
-
-                                }
-
-                            }
-
-                            if (current_base_idx < _vbaseseq.size()){
-                                current_base_idx++;
-                            }
-                        }
-                        current_chunk_idx++;
+                    for (int k = 0; k < _currentChunk.base.size(); k++){
+                        FramePlayer _fp;
+                        _fp.base = ImageRegister::ImageAt(_currentChunk.base[k]);
+                        mFrames.push_back(_fp);
                     }
 
+                    int currentFramesLastSize = mFrames.size();
+
+                    std::vector<FramePlayer> _fp1 = generateSubSequence(_currentChunk.v1, diff3->diffBaseToV1, 0);
+                    std::vector<FramePlayer> _fp2 = generateSubSequence(_currentChunk.v2, diff3->diffBaseToV2, 1);
+
+                    for (int i = 0; i < _fp1.size(); i++){
+                        if (currentFramesIdx + i < currentFramesLastSize){
+                            FramePlayer *_fp = &mFrames[currentFramesIdx + i];
+
+                            _fp->op_b_v1 = _fp1[i].op_b_v1;
+                            _fp->v1 = _fp1[i].v1;
+                        } else {
+                            FramePlayer _fp;
+
+                            _fp.op_b_v1 = _fp1[i].op_b_v1;
+                            _fp.v1 = _fp1[i].v1;
+                            mFrames.push_back(_fp);
+                        }
+                    }
+                    currentFramesLastSize = mFrames.size();
+
+                    for (int i = 0; i < _fp2.size(); i++){
+                        if (currentFramesIdx + i < currentFramesLastSize){
+                            FramePlayer *_fp = &mFrames[currentFramesIdx + i];
+
+                            _fp->op_b_v2 = _fp2[i].op_b_v2;
+                            _fp->v2 = _fp2[i].v2;
+                        } else {
+                            FramePlayer _fp;
+
+                            _fp.op_b_v2 = _fp2[i].op_b_v2;
+                            _fp.v2 = _fp2[i].v2;
+                            mFrames.push_back(_fp);
+                        }
+                    }
+
+                } else if (nFramesv1 > 0) {
+
+                    std::vector<FramePlayer> _fp = generateSubSequence(_currentChunk.v1, diff3->diffBaseToV1, 0);
+
+                    for (int i = 0; i < _fp.size(); i++) mFrames.push_back(_fp[i]);
+                } else if (nFramesV2 > 0){
+
+                    std::vector<FramePlayer> _fp = generateSubSequence(_currentChunk.v2, diff3->diffBaseToV2, 1);
+
+                    for (int i = 0; i < _fp.size(); i++) mFrames.push_back(_fp[i]);
+                }
 
 
-
-
-
-            qDebug() << "Frames: " << mFrames.size();
+                if (_currentChunk.lcsEntry.isValid()){
+                    FramePlayer _fp;
+                    _fp.base = _fp.v1 = _fp.v2 = ImageRegister::ImageAt(_currentChunk.lcsEntry.l2_ref);
+                    mFrames.push_back(_fp);
+                }
+            }
+            fprintf(stderr, "Frames: %d\n", mFrames.size());
         }
 
 
@@ -343,9 +267,10 @@ namespace GEMUFF {
                 //qDebug() << "V1 id: " << v1[currentIndex+i].id.c_str();
                 //qDebug() << "V2 id: " << v2[currentIndex+i].id.c_str();
 
+
                 if (fp.base != NULL){
 
-                    QImage _base = fp.base->toQImage();
+                    QImage _base = toQImage(fp.base);
                     painter_base.drawImage(dest, _base);
 
                     if (currentIndex == 0){
@@ -355,12 +280,12 @@ namespace GEMUFF {
 
                 if (fp.v1 != NULL){
                     if (fp.op_b_v1 == Diff::DO_Change){
-                        QImage _im1 = fp.base->toQImage();
-                        QImage _imdiff = fp.v1->toQImage();
-                        QImage _imres = ImageRegister::ProcessGPUDiff(&_im1, &_imdiff);
+                        QImage _im1 = toQImage(fp.base);
+                        QImage _imdiff = toQImage(fp.v1);
+                        QImage _imres = toQImage(ImageRegister::ProcessDIFF(fp.base, fp.v1, Device::D_GPU));
                         painter1.drawImage(dest, _imres);
                     } else {
-                        QImage _v1 = fp.v1->toQImage();
+                        QImage _v1 = toQImage(fp.v1);
                         painter1.drawImage(dest, _v1);
                     }
 
@@ -368,15 +293,16 @@ namespace GEMUFF {
 
                 if (fp.v2 != NULL){
                     if (fp.op_b_v2 == Diff::DO_Change){
-                        QImage _im1 = fp.base->toQImage();
-                        QImage _imdiff = fp.v2->toQImage();
-                        QImage _imres = ImageRegister::ProcessGPUDiff(&_im1, &_imdiff);
+                        QImage _im1 = toQImage(fp.base);
+                        QImage _imdiff = toQImage(fp.v2);
+                        QImage _imres = toQImage(ImageRegister::ProcessDIFF(fp.base, fp.v2, Device::D_GPU));
                         painter2.drawImage(dest, _imres);
                     } else {
-                        QImage _v2 = fp.v2->toQImage();
+                        QImage _v2 = toQImage(fp.v2);
                         painter2.drawImage(dest, _v2);
                     }
                 }
+
 
                 switch (fp.op_b_v1){
                 case Diff::DO_Change:
@@ -420,20 +346,17 @@ namespace GEMUFF {
 
                 // Drawing
                 if (fp.op_b_v1 == Diff::DO_None && fp.op_b_v2 == Diff::DO_None){
-                    painterMerge.drawImage(dest, fp.base->toQImage());
+                    painterMerge.drawImage(dest, toQImage(fp.base));
                 } else if (fp.op_b_v1 != Diff::DO_None && fp.op_b_v2 != Diff::DO_None){
 
-
+                    pen.setColor(Qt::red);
+                    painterMerge.fillRect(rect, Qt::red);
 
                 } else if (fp.op_b_v1 != Diff::DO_None){
 
                     if (fp.op_b_v1 == Diff::DO_Change)
                     {
-                        QImage _im1 = fp.base->toQImage();
-                        QImage _imdiff = fp.v1->toQImage();
-                        QImage _imres = ImageRegister::ProcessGPUDiff(&_im1, &_imdiff);
-
-                        painterMerge.drawImage(dest, _imres);
+                        painterMerge.drawImage(dest, toQImage(fp.v1));
                         pen.setColor(Qt::yellow);
                         painterMerge.setPen(pen);
                         painterMerge.drawRect(rect);
@@ -442,7 +365,7 @@ namespace GEMUFF {
                         painterMerge.setPen(pen);
                         painterMerge.drawRect(rect);
                     } else if (fp.op_b_v1 == Diff::DO_Add){
-                        QImage _v1 = fp.v1->toQImage();
+                        QImage _v1 = toQImage(fp.v1);
                         painterMerge.drawImage(dest, _v1);
                         pen.setColor(Qt::green);
                         painterMerge.setPen(pen);
@@ -452,11 +375,7 @@ namespace GEMUFF {
 
                     if (fp.op_b_v2 == Diff::DO_Change)
                     {
-                        QImage _im1 = fp.base->toQImage();
-                        QImage _imdiff = fp.v2->toQImage();
-                        QImage _imres = ImageRegister::ProcessGPUDiff(&_im1, &_imdiff);
-
-                        painterMerge.drawImage(dest, _imres);
+                        painterMerge.drawImage(dest, toQImage(fp.v2));
                         pen.setColor(Qt::yellow);
                         painterMerge.setPen(pen);
                         painterMerge.drawRect(rect);
@@ -465,7 +384,7 @@ namespace GEMUFF {
                         painterMerge.setPen(pen);
                         painterMerge.drawRect(rect);
                     } else if (fp.op_b_v2 == Diff::DO_Add){
-                        QImage _v2 = fp.v2->toQImage();
+                        QImage _v2 = toQImage(fp.v2);
                         painterMerge.drawImage(dest, _v2);
                         pen.setColor(Qt::green);
                         painterMerge.setPen(pen);

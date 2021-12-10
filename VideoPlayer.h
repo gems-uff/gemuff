@@ -9,6 +9,7 @@
 #include "video.h"
 #include "diffalgorithms.h"
 #include "diffplayer.h"
+#include "Helper.h"
 
 namespace GEMUFF {
     namespace VIMUFF {

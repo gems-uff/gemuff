@@ -6,7 +6,8 @@
 #include "player.h"
 #include "imageregister.h"
 #include "diffalgorithms.h"
-#include "GEMUFF.h"
+#include "gemufflib.h"
+#include "Helper.h"
 
 
 namespace GEMUFF{
@@ -28,7 +29,7 @@ namespace GEMUFF{
             void Clear();
             void SetDisplays(QLabel* _v1, QLabel* _v2, QLabel* _diff);
             void SetData(Diff::Diff2Info *_diff2);
-            void SetVideo(Video *_v1){ video1 = _v1; }
+            void SetVideo(VideoPtr _v1){ video1 = _v1; }
             int GetTimelineLenght();
             void SetTime(int time);
 
@@ -42,7 +43,7 @@ namespace GEMUFF{
             QLabel* video_1;
             QLabel* video_2;
             QLabel* video_diff;
-            Video* video1;
+            VideoPtr video1;
         };
     }
 }

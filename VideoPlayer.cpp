@@ -37,7 +37,7 @@ namespace GEMUFF {
                     QRect rect(dest.x()-10, dest.y()-10,
                                video->getFrameWidth()+10, video->getFrameHeight()+10);
 
-                    QImage _v1 = ImageRegister::ImageAt(video->getHashAtFrame(currentIndex+i))->toQImage();
+                    QImage _v1 = toQImage(ImageRegister::ImageAt(video->getHashAtFrame(currentIndex+i)));
 
                     painter.drawImage(dest, _v1);
                 }
@@ -55,7 +55,45 @@ namespace GEMUFF {
             int current_index = 0;
             int current_chunk_idx = 0;
 
-            std::vector<Hash::AbstractHashPtr> _v1Hash =
+            for (int i = 0; i < diff2->diffChunks.size(); i++){
+
+                Diff::DiffChunk _chunk = diff2->diffChunks[i];
+
+                for (int j = 0; j < _chunk.diffData.size(); j++){
+
+                    Diff::DiffData _da = _chunk.diffData[j];
+
+                    if (_da.op == Diff::DO_Change){
+                        DiffFramePlayer frame;
+                        frame.op = _da.op;
+                        frame.v1 = ImageRegister::ImageAt(_da.v1_HashPtr);
+                        frame.v2 = _da.v2_Image;
+                        mFrames.push_back(frame);
+                    } else if (_da.op == Diff::DO_Remove){
+                        DiffFramePlayer frame;
+                        frame.op = _da.op;
+                        frame.v1 = ImageRegister::ImageAt(_da.v1_HashPtr);
+                        mFrames.push_back(frame);
+                     } else if (_da.op == Diff::DO_Add){
+                        DiffFramePlayer frame;
+                        frame.op = _da.op;
+                        frame.v2 = _da.v2_Image;
+                        mFrames.push_back(frame);
+                    }
+
+                }
+
+                if (_chunk.lcsEntry.isValid()){
+                    DiffFramePlayer frame;
+                    frame.v1 = ImageRegister::ImageAt(_chunk.lcsEntry.l1_ref);
+                    frame.v2 = ImageRegister::ImageAt(_chunk.lcsEntry.l2_ref);
+                    frame.op = Diff::DO_None;
+                    mFrames.push_back(frame);
+                }
+
+            }
+
+            /*std::vector<Hash::AbstractHashPtr> _v1Hash =
                     v1->getSequenceHash();
 
             while (current_index < _v1Hash.size()){
@@ -69,6 +107,7 @@ namespace GEMUFF {
                     if (_chunk.diffData.op == Diff::DO_Change){
                         DiffFramePlayer frame;
                         frame.op = _chunk.diffData.op;
+                        std::string _s = _chunk.diffData.v1_HashPtr->toString();
                         frame.v1 = ImageRegister::ImageAt(_chunk.diffData.v1_HashPtr);
                         frame.v2 = _chunk.diffData.v2_Image;
                         mFrames.push_back(frame);
@@ -129,7 +168,7 @@ namespace GEMUFF {
                 }
 
                 current_chunk_idx++;
-            }
+            }*/
 
             slider->setMaximum(mFrames.size()-1);
         }
@@ -191,8 +230,8 @@ namespace GEMUFF {
                 //qDebug() << "V2 id: " << v2[currentIndex+i].id.c_str();
 
                 if (mFrames[currentIndex+i].op == Diff::DO_None){
-                    QImage _v1 = mFrames[currentIndex+i].v1->toQImage();
-                    QImage _v2 = mFrames[currentIndex+i].v2->toQImage();
+                    QImage _v1 = toQImage(mFrames[currentIndex+i].v1);
+                    QImage _v2 = toQImage( mFrames[currentIndex+i].v2);
 
                     painter.drawImage(dest, _v1);
                     painter2.drawImage(dest, _v2);
@@ -200,13 +239,15 @@ namespace GEMUFF {
 
                 if (mFrames[currentIndex+i].op == Diff::DO_Change){
 
-                    QImage img1 = mFrames[currentIndex+i].v1->toQImage();
-                    QImage diff = mFrames[currentIndex+i].v2->toQImage();
+                    QImage img1 = toQImage(mFrames[currentIndex+i].v1);
+                    QImage diff = toQImage(mFrames[currentIndex+i].v2);
 
 #ifdef VIMUFF_GPU
-                    QImage img2 = ImageRegister::ProcessGPUDiff(&img1, &diff);
+                    QImage img2 =  toQImage(GEMUFF::VIMUFF::ImageRegister::ProcessDIFF(
+                                mFrames[currentIndex+i].v1, mFrames[currentIndex+i].v2, Device::D_GPU));
 #else
-                    QImage img2 = ImageRegister::ProcessCPUDiff(&img1, &diff);
+                    QImage img2 = toQImage(GEMUFF::VIMUFF::ImageRegister::ProcessDIFF(
+                                mFrames[currentIndex+i].v1, mFrames[currentIndex+i].v2, Device::D_CPU));
 #endif
 
                     pen.setColor(Qt::yellow);
@@ -228,12 +269,12 @@ namespace GEMUFF {
                     painter.setPen(pen);
                     painter.drawRect(rect);
                     painter.drawImage(dest,
-                        mFrames[currentIndex+i].v1->toQImage());
+                        toQImage(mFrames[currentIndex+i].v1));
 
                     painterDiff.setPen(pen);
                     painterDiff.drawRect(rect);
                     painterDiff.drawImage(dest,
-                        mFrames[currentIndex+i].v1->toQImage());
+                        toQImage(mFrames[currentIndex+i].v1));
                 }
 
                 if (mFrames[currentIndex+i].op == Diff::DO_Add){
@@ -242,12 +283,12 @@ namespace GEMUFF {
                     painter2.setPen(pen);
                     painter2.drawRect(rect);
                     painter2.drawImage(dest,
-                       mFrames[currentIndex+i].v2->toQImage());
+                       toQImage(mFrames[currentIndex+i].v2));
 
                     painterDiff.setPen(pen);
                     painterDiff.drawRect(rect);
                     painterDiff.drawImage(dest,
-                       mFrames[currentIndex+i].v2->toQImage());
+                       toQImage(mFrames[currentIndex+i].v2));
                 }
             }
 

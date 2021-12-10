@@ -38,96 +38,45 @@ namespace GEMUFF {
 
         void Diff2Player::GenerateDiffPlayerData(){
 
-            int current_index = 0;
-            int current_chunk_idx = 0;
 
-            std::vector<Hash::AbstractHashPtr> _v1Hash =
-                    video1->getSequenceHash();
+            for (int i = 0; i < diff2->diffChunks.size(); i++){
 
-            while (current_index < _v1Hash.size()){
+                Diff::DiffChunk _chunk = diff2->diffChunks[i];
 
-                int cur_offset = 0;
+                for (int j = 0; j < _chunk.diffData.size(); j++){
 
-                while (current_chunk_idx < diff2->diffChunks.size()){
-                    Diff::DiffChunk _chunk = diff2->diffChunks[current_chunk_idx];
+                    Diff::DiffData _da = _chunk.diffData[j];
 
-                    if (_chunk.index > current_index)
-                        break;
-
-                    if (_chunk.diffData.op == Diff::DO_Change){
+                    if (_da.op == Diff::DO_Change){
                         DiffFramePlayer frame;
-                        frame.op = _chunk.diffData.op;
-                        frame.v1 = ImageRegister::ImageAt(_chunk.diffData.v1_HashPtr);
-                        frame.v2 = _chunk.diffData.v2_Image;
+                        frame.op = _da.op;
+                        frame.v1 = ImageRegister::ImageAt(_da.v1_HashPtr);
+                        frame.v2 = _da.v2_Image;
                         mFrames.push_back(frame);
-                        cur_offset++;
-                        //current_chunk_idx++;
-                        //continue;
-                    } else if (_chunk.diffData.op == Diff::DO_Remove){
+                    } else if (_da.op == Diff::DO_Remove){
                         DiffFramePlayer frame;
-                        frame.op = _chunk.diffData.op;
-                        frame.v1 = ImageRegister::ImageAt(_chunk.diffData.v1_HashPtr);
+                        frame.op = _da.op;
+                        frame.v1 = ImageRegister::ImageAt(_da.v1_HashPtr);
                         mFrames.push_back(frame);
-                        cur_offset++;
-                     } else if (_chunk.diffData.op == Diff::DO_Add){
+                     } else if (_da.op == Diff::DO_Add){
                         DiffFramePlayer frame;
-                        frame.op = _chunk.diffData.op;
-                        frame.v2 = _chunk.diffData.v2_Image;
+                        frame.op = _da.op;
+                        frame.v2 = _da.v2_Image;
                         mFrames.push_back(frame);
                     }
 
-                    current_chunk_idx++;
                 }
 
-                current_index += cur_offset;
-
-                if (current_index < _v1Hash.size()){
-
-                    ImagePtr _img = ImageRegister::ImageAt(_v1Hash[current_index]);
-
+                if (_chunk.lcsEntry.isValid()){
                     DiffFramePlayer frame;
-                    frame.v1 = _img;
-                    frame.v2 = _img;
+                    frame.v1 = ImageRegister::ImageAt(_chunk.lcsEntry.l1_ref);
+                    frame.v2 = ImageRegister::ImageAt(_chunk.lcsEntry.l2_ref);
                     frame.op = Diff::DO_None;
                     mFrames.push_back(frame);
-
-
-                }
-                current_index++;
-            }
-
-
-            while (current_chunk_idx < diff2->diffChunks.size()){
-                Diff::DiffChunk _chunk = diff2->diffChunks[current_chunk_idx];
-
-                if (_chunk.index > current_index)
-                    break;
-
-                if (_chunk.diffData.op == Diff::DO_Change){
-                    DiffFramePlayer frame;
-                    frame.op = _chunk.diffData.op;
-                    frame.v1 = ImageRegister::ImageAt(_chunk.diffData.v1_HashPtr);
-                    frame.v2 = _chunk.diffData.v2_Image;
-                    mFrames.push_back(frame);
-                    current_index++;
-                    current_chunk_idx++;
-                    continue;
-                } else if (_chunk.diffData.op == Diff::DO_Remove){
-                    DiffFramePlayer frame;
-                    frame.op = _chunk.diffData.op;
-                    frame.v1 = ImageRegister::ImageAt(_chunk.diffData.v1_HashPtr);
-                    mFrames.push_back(frame);
-                 } else if (_chunk.diffData.op == Diff::DO_Add){
-                    DiffFramePlayer frame;
-                    frame.op = _chunk.diffData.op;
-                    frame.v2 = _chunk.diffData.v2_Image;
-                    mFrames.push_back(frame);
                 }
 
-                current_chunk_idx++;
             }
 
-            //qDebug() << "Frames: " << mFrames.size();
         }
 
 
@@ -181,8 +130,8 @@ namespace GEMUFF {
                 //qDebug() << "V2 id: " << v2[currentIndex+i].id.c_str();
 
                 if (mFrames[currentIndex+i].op == Diff::DO_None){
-                    QImage _v1 = mFrames[currentIndex+i].v1->toQImage();
-                    QImage _v2 = mFrames[currentIndex+i].v2->toQImage();
+                    QImage _v1 = toQImage(mFrames[currentIndex+i].v1);
+                    QImage _v2 = toQImage(mFrames[currentIndex+i].v2);
 
                     painter.drawImage(dest, _v1);
                     painter2.drawImage(dest, _v2);
@@ -191,12 +140,16 @@ namespace GEMUFF {
                 if (mFrames[currentIndex+i].op == Diff::DO_Change){
 
 
-                    QImage img1 =  mFrames[currentIndex+i].v1->toQImage();
-                    QImage diff = mFrames[currentIndex+i].v2->toQImage();
+                    QImage img1 = toQImage(mFrames[currentIndex+i].v1);
+                    img1.save("/home/josericardo/im1.jpg");
+                    QImage diff = toQImage(mFrames[currentIndex+i].v2);
+                    img1.save("/home/josericardo/diff.jpg");
 #ifdef VIMUFF_GPU
-                    QImage img2 = ImageRegister::ProcessGPUDiff(&img1, &diff);
+                    QImage img2 = toQImage(ImageRegister::ProcessDIFF(
+                                    mFrames[currentIndex+i].v1, mFrames[currentIndex+i].v2, Device::D_GPU));
 #else
-                    QImage img2 = ImageRegister::ProcessCPUDiff(&img1, &diff);
+                    QImage img2 = toQImage(ImageRegister::ProcessDIFF(
+                                    mFrames[currentIndex+i].v1, mFrames[currentIndex+i].v2, Device::D_CPU));
 #endif
                     pen.setColor(Qt::yellow);
                     painter.setPen(pen);
@@ -217,12 +170,12 @@ namespace GEMUFF {
                     painter.setPen(pen);
                     painter.drawRect(rect);
                     painter.drawImage(dest,
-                        mFrames[currentIndex+i].v1->toQImage());
+                        toQImage(mFrames[currentIndex+i].v1));
 
                     painterDiff.setPen(pen);
                     painterDiff.drawRect(rect);
                     painterDiff.drawImage(dest,
-                        mFrames[currentIndex+i].v1->toQImage());
+                        toQImage(mFrames[currentIndex+i].v1));
                 }
 
                 if (mFrames[currentIndex+i].op == Diff::DO_Add){
@@ -230,12 +183,12 @@ namespace GEMUFF {
                     painter2.setPen(pen);
                     painter2.drawRect(rect);
                     painter2.drawImage(dest,
-                       mFrames[currentIndex+i].v2->toQImage());
+                       toQImage(mFrames[currentIndex+i].v2));
 
                     painterDiff.setPen(pen);
                     painterDiff.drawRect(rect);
                     painterDiff.drawImage(dest,
-                       mFrames[currentIndex+i].v2->toQImage());
+                       toQImage(mFrames[currentIndex+i].v2));
                 }
             }
 
